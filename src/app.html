@@ -1616,12 +1616,20 @@ function refreshSoon() { if (rfq) return; rfq = requestAnimationFrame(() => { rf
 function refresh() {
   CHARTS.clear(); chartSeq = 0; hideTip();
   const R = compute(S), C = capexTotals(S, R), CF = cashflow(S, C);
+  const c = R.cost;
+  const costTip = tipHTML('Κόστος ανά μήνα', [
+    ['', 'Κουρείς (μισθοί/ποσοστά)', eur(c.staff)], ...(c.partner ? [['', 'Εταίροι (% τζίρου)', eur(c.partner)]] : []),
+    ['', 'Μπαρίστα', eur(c.barista)], ['', 'Πάγια', eur(c.fixed)], ['', 'Αναλώσιμα', eur(c.consum)],
+    ['', 'Καφές & προϊόντα', eur(c.coffee + c.retail)], ['', 'Προμήθειες καρτών', eur(c.card)], ['', 'Φόρος', eur(R.tax)]
+  ]);
   $('strip').innerHTML = [
     ['Καθαρό/μήνα', `<span class="${sgn(R.net)}">${eur(R.net)}</span>`],
+    ['Κόστος/μήνα', eur(R.costs), costTip],
+    ['Έσοδα/μήνα', eur(R.revenue)],
     ['Κεφάλαιο', eur(C.total)],
     ['Απόσβεση', CF.payback ? `${CF.payback} μήνες` : '—'],
     ['Πελάτες/μήνα', num(R.clients)]
-  ].map(([l, v]) => `<div class="st"><span>${l}</span><b>${v}</b></div>`).join('');
+  ].map(([l, v, t]) => `<div class="st"${t ? ` data-tip="${attr(t)}"` : ''}><span>${l}</span><b>${v}</b></div>`).join('');
   document.querySelectorAll('[data-show]').forEach(e => { e.textContent = getPath(S, e.dataset.show); });
   TABS[TAB].fill(R);
   if (VIEW === 'target' && $('tgtcmp')) {
