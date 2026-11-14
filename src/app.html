@@ -245,6 +245,9 @@ body.play header.top::before{content:"";display:block;height:4px;background:var(
 .mnbar{height:8px;border-radius:99px;background:var(--surface2);overflow:hidden;margin-bottom:6px}
 .mnbar div{height:100%;border-radius:99px;background:var(--muted)}
 .mn.ok .mnbar div{background:var(--pos)} .mn.bad .mnbar div{background:var(--neg)}
+.ot{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+.ot summary{cursor:pointer;font-size:13.5px;font-weight:600;color:var(--muted)}
+.ot[open] summary{color:var(--ink)}
 @media print{header.top nav,.hbtns,.x,.btn{display:none!important} header.top{position:static}}
 </style>
 </head>
@@ -297,7 +300,8 @@ const DEFAULTS = {
     priceGrowth: 3,        // αύξηση τιμών / έτος
     wageGrowth: 4.5,       // αύξηση μισθών / έτος (κατώτατος → ~1.000 € ως 2028)
     costGrowth: 3,         // πληθωρισμός παγίων / έτος
-    goalNet: 0             // καρτέλα «Ελάχιστα»: ελάχιστο καθαρό που θέλουμε/μήνα
+    goalNet: 0,            // καρτέλα «Ελάχιστα»: ελάχιστο καθαρό που θέλουμε/μήνα
+    overtimePremium: 40    // προσαύξηση υπερωρίας % (20% υπερεργασία 41–45 ώρες, 40% νόμιμη υπερωρία)
   },
   finance: { loan: 0, rate: 6.5, years: 5, grant: 0, grantMonth: 12 },
   services: [
@@ -474,6 +478,8 @@ function avgTicket(s) {
 }
 
 /* opt: k = πολλαπλασιαστής πελατείας (ramp-up), cpd = override κουρέματα/ημέρα, ticket = override μέση απόδειξη, mode = override μοντέλο */
+// ωρομίσθιο από μηνιαίο μισθό: μισθός ÷ 25 × 6 ÷ 40 (= μισθός ÷ 166,67) × προσαύξηση υπερωρίας
+const otAutoRate = (b, st) => (+b.salary || 0) / 25 * 6 / 40 * (1 + (+st.overtimePremium || 0) / 100);
 function compute(s, opt = {}) {
   const st = s.settings, k = opt.k ?? 1, yr = opt.y || 0;
   const gP = Math.pow(1 + (+st.priceGrowth || 0) / 100, yr), gW = Math.pow(1 + (+st.wageGrowth || 0) / 100, yr), gC = Math.pow(1 + (+st.costGrowth || 0) / 100, yr);
@@ -489,10 +495,13 @@ function compute(s, opt = {}) {
   const barbers = s.barbers.map(b => {
     const mode = (opt.mode && b.mode !== 'partner') ? opt.mode : b.mode;
     const cpd = opt.cpd ?? (+b.cutsPerDay || 0);
-    const cuts = cpd * k * st.daysPerMonth;
+    // υπερωρίες: επιπλέον ώρες/μήνα × κουρέματα/ώρα (ακολουθούν τη σταδιακή πελατεία)
+    const otHours = (+b.otHours || 0) * k, otCuts = otHours * (+b.otCutsPerHour || 0);
+    const cuts = cpd * k * st.daysPerMonth + otCuts;
     const ticket = opt.ticket ?? (((+b.ticket > 0) ? +b.ticket : at) * gP);
     const gross = cuts * ticket, net = gross / vS;
-    const r = { name: b.name, mode, cuts, ticket, gross, net, shopRev: 0, staff: 0, consum: 0, card: 0, barberEarn: 0, barberNote: '' };
+    const r = { name: b.name, mode, cuts, ticket, gross, net, shopRev: 0, staff: 0, consum: 0, card: 0, barberEarn: 0, barberNote: '', otHours, otCuts, otPay: 0, otGain: 0 };
+    const otNet = otCuts * ticket / vS, otSide = otCuts * cpc + card(otCuts * ticket);
     clients += cuts;
     if (mode === 'rent') {
       r.shopRev = (+b.rent || 0) * gP;
@@ -510,12 +519,20 @@ function compute(s, opt = {}) {
         r.staff = (base + bonus) * er;
         payrollBase += base * er;
         r.barberEarn = base + bonus;
-        r.barberNote = `${num(+b.salary || 0)} € μικτά × ${num1(st.salaryMonths)} μισθοί (μαζί με δώρα & επίδομα αδείας) ÷ 12 = μέσος όρος μήνα${bonus > 0 ? ' + bonus' : ''}. Κόστος για το μαγαζί με εισφορές: ${eur(r.staff)}`;
+        if (otHours > 0) {
+          const rate = (+b.otRate > 0 ? +b.otRate * gW : otAutoRate(b, st) * gW);
+          r.otPay = otHours * rate;
+          r.staff += r.otPay * er; r.barberEarn += r.otPay;
+          r.otGain = otNet - r.otPay * er - otSide;
+        }
+        r.barberNote = `${num(+b.salary || 0)} € μικτά × ${num1(st.salaryMonths)} μισθοί (μαζί με δώρα & επίδομα αδείας) ÷ 12 = μέσος όρος μήνα${bonus > 0 ? ' + bonus' : ''}${r.otPay ? ' + υπερωρίες' : ''}. Κόστος για το μαγαζί με εισφορές: ${eur(r.staff)}`;
       } else if (mode === 'commission') {
         r.staff = net * (+b.barberPct || 0) / 100;
+        r.otGain = otNet * (1 - (+b.barberPct || 0) / 100) - otSide;
         r.barberEarn = r.staff;
         r.barberNote = 'πριν από δικό του ΕΦΚΑ & φόρο';
       } else {
+        r.otGain = otNet - otSide;
         r.barberNote = (+b.turnPct > 0) ? `${num1(b.turnPct)}% επί του τζίρου ${b.turnBase === 'own' ? 'των κουρεμάτων του' : 'όλου του μαγαζιού'} (χωρίς ΦΠΑ)` : 'αμείβεται από τα κέρδη';
       }
     }
@@ -1151,6 +1168,14 @@ function barberCard(b, i) {
     <div class="slider"><div class="top"><span class="small">Κουρέματα / ημέρα</span><b data-show="${p}.cutsPerDay">${b.cutsPerDay}</b></div>
       <input type="range" min="0" max="24" step="1" data-k="${p}.cutsPerDay" data-t="n" value="${b.cutsPerDay}"></div>
     <div class="fields">${f}${field(`${p}.ticket`, 'Δική του μέση τιμή', { suf: '€', step: 0.5, help: '0 = από τιμοκατάλογο' })}</div>
+    <details class="ot"${+b.otHours > 0 ? ' open' : ''}><summary>Υπερωρίες${+b.otHours > 0 ? ` · ${num1(b.otHours)} ώρες/μήνα` : ''}</summary>
+      <div class="fields" style="margin-top:8px">
+        ${field(`${p}.otHours`, 'Ώρες υπερωρίας', { suf: 'ώρες/μήνα', step: 1, min: 0 })}
+        ${field(`${p}.otCutsPerHour`, 'Κουρέματα ανά ώρα', { suf: 'κουρ./ώρα', step: 0.5, min: 0 })}
+        ${b.mode === 'salary' ? field(`${p}.otRate`, 'Κόστος ώρας (μικτά)', { suf: '€/ώρα', step: 0.5, min: 0, help: `0 = αυτόματα: ${eur2(otAutoRate(b, S.settings))}/ώρα (ωρομίσθιο +${num(S.settings.overtimePremium)}%)` }) : ''}
+      </div>
+      <p class="small" style="margin:6px 0 0">${b.mode === 'salary' ? 'Ο μισθωτός πληρώνεται κάθε ώρα υπερωρίας με προσαύξηση, συν εργοδοτικές εισφορές. Οι υπερωρίες δηλώνονται εκ των προτέρων στο ΕΡΓΑΝΗ.' : b.mode === 'commission' ? 'Με ποσοστό δεν υπάρχει κόστος ώρας· παίρνει το ποσοστό του και από τα επιπλέον κουρέματα.' : b.mode === 'rent' ? 'Τα επιπλέον κουρέματα είναι δικά του· στο μαγαζί φέρνουν μόνο κόσμο για καφέ.' : 'Χωρίς κόστος ώρας· τα επιπλέον κουρέματα πάνε στο μαγαζί.'}</p>
+    </details>
     <div class="res" id="bres-${i}"></div>
   </div>`;
 }
@@ -1161,6 +1186,7 @@ function fBarbers(R) {
     <div><span>Τζίρος (με ΦΠΑ)</span><b>${eur(b.gross)}</b></div>
     <div><span>Μένει στο μαγαζί</span><b class="${sgn(b.contrib)}">${eur(b.contrib)}</b></div>
     <div><span>Παίρνει ο ίδιος</span><b>${b.mode === 'partner' && !b.partnerFee ? '—' : eur(b.barberEarn)}</b></div>
+    ${b.otCuts > 0 ? `<div style="grid-column:1/-1"><span>Υπερωρίες: ${num1(b.otHours)} ώρες → +${num(b.otCuts)} πελάτες${b.otPay ? ` · κόστος ${eur(b.otPay * (1 + S.settings.employerRate / 100))} με εισφορές` : ''}</span><b class="${sgn(b.otGain)}">${b.otGain >= 0 ? 'μένουν' : 'χάνονται'} ${eur(Math.abs(b.otGain))}/μήνα</b> <span>προ φόρου</span></div>` : ''}
     <div style="grid-column:1/-1"><span>${esc(b.barberNote)}</span></div>`));
   const mx = Math.max(1, ...R.barbers.flatMap(b => [Math.abs(b.contrib), Math.max(0, b.barberEarn)]));
   setHTML('bb-chart', legend([['var(--c1)', 'Μένει στο μαγαζί', 'sq'], ['var(--c2)', 'Παίρνει ο κουρέας', 'sq']]) + R.barbers.map(b => {
@@ -1367,6 +1393,7 @@ function rSettings() {
       ${field('settings.vatProducts', 'ΦΠΑ προϊόντων', { suf: '%', step: 1 })}
       ${field('settings.employerRate', 'Εργοδοτικές εισφορές', { suf: '%', step: 0.01 })}
       ${field('settings.salaryMonths', 'Μισθοί/έτος', { step: 0.5, help: '14 = με δώρα & επίδομα άδειας' })}
+      ${field('settings.overtimePremium', 'Προσαύξηση υπερωρίας', { suf: '%', step: 5, help: '20% υπερεργασία (41–45 ώρες) · 40% υπερωρία' })}
       ${field('settings.corpTax', 'Φόρος εταιρείας', { suf: '%', step: 1 })}
       ${field('settings.dividendTax', 'Φόρος μερισμάτων', { suf: '%', step: 1 })}
       ${field('settings.cardShare', 'Πληρωμές με κάρτα', { suf: '%', step: 5 })}
@@ -1408,7 +1435,7 @@ const LIST_SECTIONS = { capex: 'Έξοδα έναρξης', fixed: 'Μηνιαί
 const MODE_ALIASES = { salary: 'salary', 'μισθωτός': 'salary', 'μισθωτος': 'salary', 'μισθός': 'salary', commission: 'commission', 'ποσοστό': 'commission', 'ποσοστο': 'commission', rent: 'rent', 'ενοικίαση': 'rent', 'ενοικιαση': 'rent', 'ενοικίαση θέσης': 'rent', partner: 'partner', 'εταίρος': 'partner', 'εταιρος': 'partner' };
 const COFFEE_ALIASES = { free: 'free', 'κερασμένος': 'free', paid: 'paid', 'πωλείται': 'paid', both: 'both', mixed: 'both', 'και τα δύο': 'both', 'μικτό': 'both', none: 'none', 'χωρίς': 'none' };
 const FIELD_MAP = {
-  barber: { turnpct: 'turnPct', turnoverpct: 'turnPct', turnbase: 'turnBase', mode: 'mode', cutsperday: 'cutsPerDay', cuts: 'cutsPerDay', salary: 'salary', bonuspct: 'bonusPct', bonus: 'bonusPct', rent: 'rent', barberpct: 'barberPct', commissionpct: 'barberPct', commission: 'barberPct', ticket: 'ticket' },
+  barber: { othours: 'otHours', overtime: 'otHours', otcutsperhour: 'otCutsPerHour', otrate: 'otRate', turnpct: 'turnPct', turnoverpct: 'turnPct', turnbase: 'turnBase', mode: 'mode', cutsperday: 'cutsPerDay', cuts: 'cutsPerDay', salary: 'salary', bonuspct: 'bonusPct', bonus: 'bonusPct', rent: 'rent', barberpct: 'barberPct', commissionpct: 'barberPct', commission: 'barberPct', ticket: 'ticket' },
   partner: { cappct: 'capPct', capital: 'capPct', share: 'share', profitpct: 'share', sharepct: 'share', role: 'role' },
   service: { price: 'price', mix: 'mix', mixpct: 'mix' },
   capex: { amount: 'amount', on: 'on', enabled: 'on', qty: 'qty', quantity: 'qty', unit: 'unit', unitprice: 'unit', price: 'unit' },
@@ -1643,7 +1670,7 @@ async function push() {
 /* ---------- human-readable diff for the history ---------- */
 const SEC_LABEL = { barbers: 'Κουρέας', services: 'Υπηρεσία', capex: 'Έξοδο έναρξης', fixed: 'Πάγιο', partners: 'Εταίρος', settings: 'Παραδοχές', barista: 'Μπαρίστα/καφές', retail: 'Λιανική', finance: 'Χρηματοδότηση' };
 const F_LABEL = {
-  cutsPerDay: 'κουρέματα/ημέρα', salary: 'μισθός', bonusPct: 'bonus %', rent: 'ενοίκιο θέσης', barberPct: 'ποσοστό κουρέα', turnPct: '% επί τζίρου', turnBase: 'τζίρος από', ticket: 'μέση τιμή', mode: 'μοντέλο',
+  cutsPerDay: 'κουρέματα/ημέρα', salary: 'μισθός', bonusPct: 'bonus %', rent: 'ενοίκιο θέσης', barberPct: 'ποσοστό κουρέα', turnPct: '% επί τζίρου', otHours: 'ώρες υπερωρίας/μήνα', otCutsPerHour: 'κουρέματα/ώρα υπερωρίας', otRate: 'κόστος ώρας υπερωρίας', overtimePremium: 'προσαύξηση υπερωρίας', turnBase: 'τζίρος από', ticket: 'μέση τιμή', mode: 'μοντέλο',
   name: 'όνομα', amount: 'ποσό', qty: 'τεμάχια', unit: 'τιμή τεμαχίου', on: 'ενεργό', price: 'τιμή', mix: '% πελατών', capPct: '% κεφαλαίου', share: '% κερδών', role: 'ρόλος', note: 'σημείωση', cat: 'κατηγορία',
   enabled: 'μπαρίστα', fte: 'απασχόληση %', coffeeMode: 'καφές', cupsPerDay: 'καφέδες/ημέρα', takeRate: '% που παίρνουν καφέ', freeAll: 'δωρεάν καφές σε όλους τους πελάτες', costPerCup: 'κόστος/καφέ', sales: 'πωλήσεις', margin: 'περιθώριο %',
   loan: 'δάνειο', rate: 'επιτόκιο', years: 'διάρκεια (έτη)', grant: 'επιδότηση', grantMonth: 'μήνας επιδότησης',
@@ -1852,7 +1879,7 @@ document.addEventListener('input', e => {
   if (el.hasAttribute('data-rr')) renderView(); else refreshSoon();
 });
 
-const blankBarber = n => ({ name: `Κουρέας ${n}`, mode: 'salary', cutsPerDay: 8, ticket: 0, salary: 1100, bonusPct: 0, rent: 400, barberPct: 50, turnPct: 0, turnBase: 'shop' });
+const blankBarber = n => ({ name: `Κουρέας ${n}`, mode: 'salary', cutsPerDay: 8, ticket: 0, salary: 1100, bonusPct: 0, rent: 400, barberPct: 50, turnPct: 0, turnBase: 'shop', otHours: 0, otCutsPerHour: 2, otRate: 0 });
 const ACTIONS = {
   view: () => {
     if (VIEW === 'target') { setView('base'); toast('Τωρινά νούμερα'); }
