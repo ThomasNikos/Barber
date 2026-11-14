@@ -1,0 +1,1085 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Barber · Καλαμάτα</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Commissioner:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f1ea; --surface:#fffdf9; --surface2:#efe9df; --ink:#1c1915; --muted:#6e665a; --line:#e0d8ca;
+  --accent:#9c6a22; --accent-soft:#f1e3cb; --pos:#2c7a4b; --pos-soft:#dcefe2; --neg:#b0402d; --neg-soft:#f7dfd9;
+  --c1:#9c6a22; --c2:#3f6e8c; --c3:#7a5a8f; --c4:#4f8a6b; --c5:#b0402d; --c6:#8a8172;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#13110e; --surface:#1c1915; --surface2:#26221c; --ink:#f0e9de; --muted:#a59b8b; --line:#332e26;
+    --accent:#d8a650; --accent-soft:#3a2e1b; --pos:#62c08a; --pos-soft:#1c3326; --neg:#e57a66; --neg-soft:#3d221d;
+    --c1:#d8a650; --c2:#6fa3c4; --c3:#a88bc0; --c4:#72b892; --c5:#e57a66; --c6:#8f8778;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#13110e; --surface:#1c1915; --surface2:#26221c; --ink:#f0e9de; --muted:#a59b8b; --line:#332e26;
+  --accent:#d8a650; --accent-soft:#3a2e1b; --pos:#62c08a; --pos-soft:#1c3326; --neg:#e57a66; --neg-soft:#3d221d;
+  --c1:#d8a650; --c2:#6fa3c4; --c3:#a88bc0; --c4:#72b892; --c5:#e57a66; --c6:#8f8778;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 Commissioner,system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:var(--accent)}
+
+/* header */
+header.top{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0 6px}
+.logo{display:flex;align-items:center;gap:10px}
+.pole{width:10px;height:28px;border-radius:5px;background:repeating-linear-gradient(-45deg,var(--neg) 0 5px,var(--surface) 5px 10px,var(--c2) 10px 15px,var(--surface) 15px 20px);border:1px solid var(--line)}
+.logo h1{margin:0;font-size:17px;font-weight:800;letter-spacing:.22em;text-transform:uppercase}
+.logo small{display:block;font-size:11px;color:var(--muted);letter-spacing:.04em;margin-top:-2px}
+.hbtns{display:flex;gap:6px}
+.ghost{background:none;border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-size:13px;color:var(--muted)}
+.ghost:hover{color:var(--ink);border-color:var(--muted)}
+.strip{display:flex;gap:22px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:none}
+.strip::-webkit-scrollbar{display:none}
+.st{white-space:nowrap}
+.st>span{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.st b{font-size:17px;font-weight:700}
+nav.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin:0 -4px}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:8px 10px;white-space:nowrap;color:var(--muted);font-weight:500;font-size:14px}
+nav.tabs button.on{color:var(--ink);border-bottom-color:var(--accent)}
+
+main{padding:18px 0 60px}
+h2{font-size:22px;margin:4px 0 4px;font-weight:700;letter-spacing:-.01em}
+h3{font-size:15px;margin:0 0 10px;font-weight:700}
+.lead{color:var(--muted);margin:0 0 16px;max-width:760px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr))}
+.kgrid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));margin-bottom:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.card.flat{background:var(--surface2)}
+.sec{margin-top:14px}
+.kpi>span{display:block;font-size:12px;color:var(--muted)}
+.kpi b{display:block;font-size:22px;font-weight:700;margin-top:2px;letter-spacing:-.01em}
+.kpi em{display:block;font-style:normal;font-size:12px;color:var(--muted);margin-top:2px}
+.pos{color:var(--pos)} .neg{color:var(--neg)} .mut{color:var(--muted)}
+.row{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dashed var(--line)}
+.row:last-child{border-bottom:0}
+.row.tot{font-weight:700;border-top:1px solid var(--ink);border-bottom:0;margin-top:4px;padding-top:8px}
+.row.sub{font-weight:600}
+.row .l{color:var(--muted)}
+.row.tot .l,.row.sub .l{color:var(--ink)}
+.small{font-size:12.5px;color:var(--muted)}
+.note{font-size:13px;color:var(--muted);background:var(--surface2);border-radius:10px;padding:10px 12px;margin-top:10px}
+.warn{background:var(--neg-soft);color:var(--ink)}
+
+/* fields */
+.fields{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr))}
+label.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+label.f>span{font-size:12px;color:var(--muted)}
+label.f>em{font-style:normal;font-size:11.5px;color:var(--muted)}
+.inp{display:flex;align-items:center;background:var(--surface2);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.inp:focus-within{border-color:var(--accent)}
+.inp input,.inp select{flex:1;min-width:0;border:0;background:none;color:inherit;font:inherit;padding:7px 9px;outline:none;-moz-appearance:textfield}
+.inp input::-webkit-inner-spin-button{opacity:.4}
+.inp i{font-style:normal;color:var(--muted);font-size:13px;padding-right:9px;white-space:nowrap}
+input.txt{width:100%;border:1px solid transparent;background:none;color:inherit;font:inherit;padding:4px 6px;border-radius:6px;margin-left:-6px}
+input.txt:hover{border-color:var(--line)} input.txt:focus{border-color:var(--accent);outline:none;background:var(--surface2)}
+input.name{font-size:17px;font-weight:700}
+select.sel{width:100%;border:1px solid var(--line);background:var(--surface2);color:inherit;font:inherit;padding:7px 9px;border-radius:8px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px}
+.chk input{accent-color:var(--accent);width:16px;height:16px}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:9px;padding:8px 14px;font-weight:600;font-size:14px}
+.btn.sec2{background:var(--surface2);color:var(--ink);border:1px solid var(--line)}
+.x{background:none;border:0;color:var(--muted);font-size:18px;line-height:1;padding:4px 6px;border-radius:6px}
+.x:hover{color:var(--neg);background:var(--neg-soft)}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+
+/* barbers */
+.bc{position:relative}
+.bc .hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.bc .hd input{flex:1}
+.mode{display:inline-block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent)}
+.slider{margin:6px 0 10px}
+.slider .top{display:flex;justify-content:space-between;align-items:baseline}
+.slider .top b{font-size:20px}
+.res{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.res div{background:var(--surface2);border-radius:9px;padding:8px 10px}
+.res span{display:block;font-size:11.5px;color:var(--muted)}
+.res b{font-size:16px}
+
+/* tables */
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{font-size:11.5px;color:var(--muted);font-weight:600;text-align:left;padding:6px 6px;border-bottom:1px solid var(--line);text-transform:uppercase;letter-spacing:.04em}
+.tbl td{padding:4px 6px;border-bottom:1px dashed var(--line);vertical-align:middle}
+.tbl td.num,.tbl th.num{text-align:right}
+.tbl .inp{min-width:90px}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.cap-item{display:grid;grid-template-columns:24px 1fr 120px 28px;gap:6px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--line)}
+.cap-item .nt{grid-column:2/4;font-size:12px;color:var(--muted);margin-top:-4px}
+.cap-item.off{opacity:.5}
+.cathd{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.cathd b{font-size:15px}
+
+/* bars */
+.bars .b{margin:7px 0}
+.bars .bl{display:flex;justify-content:space-between;font-size:13px}
+.bars .bt{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-top:3px}
+.bars .bf{height:100%;border-radius:99px}
+.stack{display:flex;height:22px;border-radius:7px;overflow:hidden;margin:6px 0 10px;background:var(--surface2)}
+.stack div{height:100%}
+.legend{display:flex;flex-direction:column;gap:3px}
+.legend .row span:first-child{display:flex;align-items:center;gap:7px}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+
+/* heat */
+.heat{border-collapse:separate;border-spacing:3px;width:100%;font-size:13px}
+.heat th{font-size:11.5px;color:var(--muted);font-weight:600;padding:4px}
+.heat td{text-align:center;padding:8px 4px;border-radius:7px;font-weight:600;white-space:nowrap}
+.heat td.cur{outline:2px solid var(--ink);outline-offset:-2px}
+
+.models{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
+.model{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface2)}
+.model.best{border-color:var(--pos);box-shadow:inset 0 0 0 1px var(--pos)}
+.model b{font-size:20px;display:block}
+svg text{fill:var(--muted);font-size:12px;font-family:inherit}
+.scn{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
+.toast.on{opacity:1}
+@media (max-width:600px){
+  #lockBtn .lbl{display:none}
+  #lockBtn svg{margin-right:0}
+  h2{font-size:19px}
+  .kpi b{font-size:19px}
+  .card{padding:13px}
+  .capx{grid-template-columns:22px 1fr 26px}
+  .capx .inp{grid-column:2;grid-row:2;max-width:170px}
+  .capx .x{grid-column:3;grid-row:1}
+  .capx .nt{grid-column:2;margin-top:0}
+}
+.ghost.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.ghost svg{width:13px;height:13px;vertical-align:-2px;margin-right:4px}
+.lockbar svg{width:15px;height:15px;vertical-align:-2px;margin-right:6px;flex:none}
+.tbl input.txt{min-width:130px}
+body.locked [data-act^="add"],body.locked [data-act^="del"],body.locked [data-act="reset"],body.locked [data-act="import"],body.locked [data-act="loadScn"]{display:none!important}
+body.locked #view input:disabled,body.locked #view select:disabled{opacity:.75;cursor:not-allowed}
+body.locked input.txt:hover{border-color:transparent}
+.lockbar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:8px 12px;margin-bottom:14px;font-size:14px}
+@media print{header.top nav,.hbtns,.x,.btn{display:none!important} header.top{position:static}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo"><div class="pole"></div><div><h1>Barber</h1><small id="subtitle">Καλαμάτα · επιχειρηματικό πλάνο</small></div></div>
+      <div class="hbtns">
+        <button class="ghost" data-act="lock" id="lockBtn" title="Κλείδωμα αλλαγών"></button>
+        <button class="ghost" data-act="theme" title="Θέμα">◐</button>
+        <button class="ghost" data-act="logout">Έξοδος</button>
+      </div>
+    </div>
+    <div class="strip" id="strip"></div>
+    <nav class="tabs" id="tabs"></nav>
+  </div>
+</header>
+<main class="wrap" id="view"></main>
+<div class="toast" id="toast"></div>
+<input type="file" id="importFile" accept="application/json" hidden>
+
+<script>
+'use strict';
+/* =========================================================
+   DEFAULTS — εκτιμήσεις για Καλαμάτα, Νοέμβριος 2026
+   ========================================================= */
+const DEFAULTS = {
+  v: 1,
+  settings: {
+    daysPerMonth: 24,      // εργάσιμες ημέρες ανά κουρέα / μήνα (6ήμερο μείον άδειες)
+    vatServices: 24,       // ΦΠΑ υπηρεσιών κουρείου
+    vatCoffee: 13,         // ΦΠΑ καφέ
+    vatProducts: 24,       // ΦΠΑ προϊόντων λιανικής
+    employerRate: 21.79,   // εργοδοτικές εισφορές ΕΦΚΑ (επιβεβαίωση με λογιστή)
+    salaryMonths: 14,      // 12 μισθοί + δώρα + επίδομα άδειας
+    cardShare: 75,         // % πληρωμών με κάρτα
+    cardFee: 1.0,          // προμήθεια POS %
+    consumablePerCut: 0.8, // αναλώσιμα ανά κούρεμα (λεπίδες, απολυμαντικά, χαρτί λαιμού, πετσέτα)
+    corpTax: 22,           // φόρος εισοδήματος νομικών προσώπων
+    dividendTax: 5,        // φόρος μερισμάτων
+    rampMonths: 6,         // μήνες μέχρι πλήρη πελατεία
+    rampStart: 45,         // % πελατείας τον 1ο μήνα
+    reserveMonths: 2,      // κεφάλαιο κίνησης σε μήνες παγίων + μισθοδοσίας
+    contingencyPct: 10,    // απρόβλεπτα επί των εξόδων έναρξης
+    horizon: 36
+  },
+  services: [
+    { name: 'Κούρεμα', price: 15, mix: 55 },
+    { name: 'Κούρεμα + γένια', price: 22, mix: 28 },
+    { name: 'Γένια / ξύρισμα', price: 10, mix: 10 },
+    { name: 'Παιδικό κούρεμα', price: 12, mix: 7 }
+  ],
+  barbers: [
+    { name: 'Πάνος', mode: 'salary', cutsPerDay: 11, ticket: 0, salary: 1300, bonusPct: 0, rent: 400, barberPct: 50 },
+    { name: 'Κουρέας 2', mode: 'salary', cutsPerDay: 10, ticket: 0, salary: 1100, bonusPct: 0, rent: 400, barberPct: 50 },
+    { name: 'Κουρέας 3', mode: 'salary', cutsPerDay: 10, ticket: 0, salary: 1100, bonusPct: 0, rent: 400, barberPct: 50 },
+    { name: 'Κουρέας 4', mode: 'salary', cutsPerDay: 9, ticket: 0, salary: 1100, bonusPct: 0, rent: 400, barberPct: 50 },
+    { name: 'Κουρέας 5', mode: 'rent', cutsPerDay: 8, ticket: 0, salary: 1100, bonusPct: 0, rent: 400, barberPct: 50 }
+  ],
+  barista: { enabled: true, salary: 920, fte: 100, coffeeMode: 'free', price: 2.0, cupsPerDay: 40, takeRate: 60, costPerCup: 0.45 },
+  retail: { sales: 400, margin: 40 },
+  fixed: [
+    { name: 'Ενοίκιο (75 τ.μ.)', amount: 550, note: 'Εύρος 500–600 €' },
+    { name: 'Ρεύμα', amount: 280, note: 'Κλιματισμός, σεσουάρ, μηχανή espresso, φωτισμός' },
+    { name: 'Νερό', amount: 45, note: '' },
+    { name: 'Internet & τηλέφωνο', amount: 40, note: '' },
+    { name: 'Λογιστής & μισθοδοσία', amount: 250, note: 'Με 5–6 εργαζόμενους' },
+    { name: 'Ασφάλεια καταστήματος', amount: 40, note: 'Πυρός, κλοπής, αστικής ευθύνης' },
+    { name: 'Λογισμικό κρατήσεων', amount: 40, note: 'Online ραντεβού + SMS υπενθυμίσεις' },
+    { name: 'Πλυντήριο πετσετών & καθαριότητα', amount: 150, note: '' },
+    { name: 'Διαφήμιση (social, Google)', amount: 200, note: '' },
+    { name: 'Συντήρηση & μικροέξοδα', amount: 100, note: '' }
+  ],
+  capex: [
+    { cat: 'Χώρος & νομικά', name: 'Εγγύηση ενοικίου (2 μήνες)', amount: 1100, on: true, note: 'Επιστρέφεται στη λήξη' },
+    { cat: 'Χώρος & νομικά', name: 'Σύσταση εταιρείας & ΓΕΜΗ', amount: 600, on: true, note: 'ΙΚΕ ή ΟΕ, συμβολαιογράφος/λογιστής' },
+    { cat: 'Χώρος & νομικά', name: 'Μηχανικός: γνωστοποίηση λειτουργίας, κατόψεις', amount: 900, on: true, note: 'notify-business.gov.gr' },
+    { cat: 'Χώρος & νομικά', name: 'Πυρασφάλεια & φωτιστικά ασφαλείας', amount: 350, on: true, note: '' },
+    { cat: 'Χώρος & νομικά', name: 'Ταμειακή / POS & σύνδεση myDATA', amount: 450, on: true, note: '' },
+    { cat: 'Ανακαίνιση', name: 'Ηλεκτρολογικά & φωτισμός', amount: 3500, on: true, note: 'Πρίζες ανά θέση, φωτισμός καθρεπτών' },
+    { cat: 'Ανακαίνιση', name: 'Υδραυλικά (λουτήρες, WC)', amount: 2500, on: true, note: '' },
+    { cat: 'Ανακαίνιση', name: 'Δάπεδο 75 τ.μ.', amount: 2600, on: true, note: '~35 €/τ.μ. τοποθετημένο' },
+    { cat: 'Ανακαίνιση', name: 'Βαφές, γυψοσανίδες, διακόσμηση', amount: 2500, on: true, note: '' },
+    { cat: 'Ανακαίνιση', name: 'Κλιματισμός (2 μονάδες)', amount: 2200, on: true, note: '' },
+    { cat: 'Ανακαίνιση', name: 'Πρόσοψη & φωτεινή επιγραφή', amount: 1800, on: true, note: '' },
+    { cat: 'Εξοπλισμός κουρείου', name: 'Πολυθρόνες κουρείου ×5', amount: 3250, on: true, note: '~650 € η μία' },
+    { cat: 'Εξοπλισμός κουρείου', name: 'Θέσεις εργασίας & καθρέπτες ×5', amount: 1750, on: true, note: '' },
+    { cat: 'Εξοπλισμός κουρείου', name: 'Λουτήρες ×2', amount: 1400, on: true, note: '' },
+    { cat: 'Εξοπλισμός κουρείου', name: 'Εργαλεία (μηχανές, ψαλίδια, σεσουάρ) ×4', amount: 1600, on: true, note: 'Μόνο για μισθωτούς — ο ενοικιαστής φέρνει τα δικά του' },
+    { cat: 'Εξοπλισμός κουρείου', name: 'Αποστειρωτής, θερμαντήρας πετσετών, καρότσια', amount: 600, on: true, note: '' },
+    { cat: 'Εξοπλισμός κουρείου', name: 'Πετσέτες, ποδιές, αρχικά αναλώσιμα', amount: 500, on: true, note: '' },
+    { cat: 'Γωνιά καφέ', name: 'Μηχανή espresso 2 δόσεων', amount: 2800, on: true, note: 'Μεταχειρισμένη: ~1.500 €' },
+    { cat: 'Γωνιά καφέ', name: 'Μύλος καφέ', amount: 700, on: true, note: '' },
+    { cat: 'Γωνιά καφέ', name: 'Πάγκος μπαρ', amount: 1500, on: true, note: '' },
+    { cat: 'Γωνιά καφέ', name: 'Ψυγείο', amount: 600, on: true, note: '' },
+    { cat: 'Γωνιά καφέ', name: 'Σκεύη, φλιτζάνια, αρχικό απόθεμα', amount: 400, on: true, note: '' },
+    { cat: 'Αναμονή & λοιπά', name: 'Καναπές & καθίσματα αναμονής', amount: 1200, on: true, note: '' },
+    { cat: 'Αναμονή & λοιπά', name: 'Ηχοσύστημα & TV', amount: 600, on: true, note: '' },
+    { cat: 'Αναμονή & λοιπά', name: 'Συναγερμός & κάμερες', amount: 600, on: true, note: '' },
+    { cat: 'Αναμονή & λοιπά', name: 'Αρχικό απόθεμα προϊόντων λιανικής', amount: 1200, on: true, note: 'Pomade, λάδια γενειάδας, σαμπουάν' },
+    { cat: 'Μάρκετινγκ', name: 'Branding, logo, website, Google profile', amount: 800, on: true, note: '' },
+    { cat: 'Μάρκετινγκ', name: 'Εγκαίνια & διαφήμιση έναρξης', amount: 1500, on: true, note: '' }
+  ],
+  partners: [
+    { name: 'Θωμάς', capPct: 50, share: 40, role: 'Επενδυτής / διαχειριστής' },
+    { name: 'Χρήστος', capPct: 50, share: 40, role: 'Επενδυτής / διαχειριστής' },
+    { name: 'Πάνος', capPct: 0, share: 20, role: 'Πιστοποίηση κουρέα, τεχνικός υπεύθυνος' }
+  ]
+};
+
+const MODES = {
+  salary: { label: 'Μισθωτός', help: 'Το μαγαζί εισπράττει όλο τον τζίρο και πληρώνει μισθό + εισφορές (+ προαιρετικό ποσοστό).' },
+  commission: { label: 'Ποσοστό', help: 'Ο κουρέας (με μπλοκάκι) παίρνει ποσοστό από κάθε κούρεμα. Χωρίς μισθό, χωρίς εισφορές για το μαγαζί.' },
+  rent: { label: 'Ενοικίαση θέσης', help: 'Ο κουρέας πληρώνει σταθερό νοίκι για την καρέκλα και κρατά τον τζίρο του. Φέρνει δικά του εργαλεία & αναλώσιμα.' },
+  partner: { label: 'Εταίρος', help: 'Δουλεύει χωρίς μισθό· αμείβεται από το μερίδιο κερδών.' }
+};
+
+/* =========================================================
+   STATE
+   ========================================================= */
+const LS_KEY = 'barber.state.v1', LS_SCN = 'barber.scenarios.v1', LS_TAB = 'barber.tab', LS_THEME = 'barber.theme', LS_WHO = 'barber.who';
+const clone = o => JSON.parse(JSON.stringify(o));
+const ls = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+};
+function hydrate(o) {
+  const d = clone(DEFAULTS);
+  if (!o || o.v !== 1) return d;
+  return Object.assign(d, o, {
+    settings: Object.assign(d.settings, o.settings || {}),
+    barista: Object.assign(d.barista, o.barista || {}),
+    retail: Object.assign(d.retail, o.retail || {})
+  });
+}
+let S = (() => { try { return hydrate(JSON.parse(ls.get(LS_KEY))); } catch (e) { return clone(DEFAULTS); } })();
+let TAB = ls.get(LS_TAB) || 'overview';
+const save = () => { ls.set(LS_KEY, JSON.stringify(S)); schedulePush(); };
+
+function getPath(o, p) { return p.split('.').reduce((a, k) => a == null ? a : a[k], o); }
+function setPath(o, p, v) { const ks = p.split('.'); const last = ks.pop(); const t = ks.reduce((a, k) => a[k], o); t[last] = v; }
+
+/* =========================================================
+   FORMAT
+   ========================================================= */
+const fE = new Intl.NumberFormat('el-GR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+const fE2 = new Intl.NumberFormat('el-GR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fN = new Intl.NumberFormat('el-GR', { maximumFractionDigits: 0 });
+const fN1 = new Intl.NumberFormat('el-GR', { maximumFractionDigits: 1 });
+const eur = v => fE.format(Math.round(v) || 0);
+const eur2 = v => fE2.format(v || 0);
+const num = v => fN.format(v || 0);
+const num1 = v => fN1.format(v || 0);
+const sgn = v => v >= 0 ? 'pos' : 'neg';
+const kEur = v => (Math.abs(v) >= 1000 ? (v / 1000).toFixed(Math.abs(v) >= 10000 ? 0 : 1).replace('.', ',') + 'k' : Math.round(v)) + ' €';
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* =========================================================
+   MODEL
+   ========================================================= */
+function avgTicket(s) {
+  const tot = s.services.reduce((a, x) => a + (+x.mix || 0), 0);
+  if (!tot) return 0;
+  return s.services.reduce((a, x) => a + (+x.price || 0) * (+x.mix || 0), 0) / tot;
+}
+
+/* opt: k = πολλαπλασιαστής πελατείας (ramp-up), cpd = override κουρέματα/ημέρα, ticket = override μέση απόδειξη, mode = override μοντέλο */
+function compute(s, opt = {}) {
+  const st = s.settings, k = opt.k ?? 1;
+  const vS = 1 + st.vatServices / 100, vC = 1 + st.vatCoffee / 100, vP = 1 + st.vatProducts / 100;
+  const er = 1 + st.employerRate / 100, sm = st.salaryMonths / 12;
+  const card = (gross) => gross * st.cardShare / 100 * st.cardFee / 100;
+  const at = avgTicket(s);
+  const rev = { services: 0, chairRent: 0, coffee: 0, retail: 0 };
+  const cost = { staff: 0, consum: 0, card: 0, barista: 0, coffee: 0, retail: 0, fixed: 0 };
+  let clients = 0, shopCuts = 0, shopGross = 0, shopNet = 0, payrollBase = 0;
+
+  const barbers = s.barbers.map(b => {
+    const mode = (opt.mode && b.mode !== 'partner') ? opt.mode : b.mode;
+    const cpd = opt.cpd ?? (+b.cutsPerDay || 0);
+    const cuts = cpd * k * st.daysPerMonth;
+    const ticket = opt.ticket ?? ((+b.ticket > 0) ? +b.ticket : at);
+    const gross = cuts * ticket, net = gross / vS;
+    const r = { name: b.name, mode, cuts, ticket, gross, net, shopRev: 0, staff: 0, consum: 0, card: 0, barberEarn: 0, barberNote: '' };
+    clients += cuts;
+    if (mode === 'rent') {
+      r.shopRev = +b.rent || 0;
+      rev.chairRent += r.shopRev;
+      r.barberEarn = net - r.shopRev - cuts * st.consumablePerCut;
+      r.barberNote = 'πριν από δικό του ΕΦΚΑ & φόρο';
+    } else {
+      r.shopRev = net; rev.services += net;
+      r.consum = cuts * st.consumablePerCut;
+      r.card = card(gross);
+      shopCuts += cuts; shopGross += gross; shopNet += net;
+      if (mode === 'salary') {
+        const base = (+b.salary || 0) * sm;
+        const bonus = net * (+b.bonusPct || 0) / 100;
+        r.staff = (base + bonus) * er;
+        payrollBase += base * er;
+        r.barberEarn = base + bonus;
+        r.barberNote = 'μικτά/μήνα (με δώρα & επίδομα)';
+      } else if (mode === 'commission') {
+        r.staff = net * (+b.barberPct || 0) / 100;
+        r.barberEarn = r.staff;
+        r.barberNote = 'πριν από δικό του ΕΦΚΑ & φόρο';
+      } else {
+        r.barberNote = 'αμείβεται από τα κέρδη';
+      }
+    }
+    r.contrib = r.shopRev - r.staff - r.consum - r.card;
+    cost.staff += r.staff; cost.consum += r.consum; cost.card += r.card;
+    return r;
+  });
+
+  // μπαρίστα & καφές
+  const ba = s.barista;
+  let cups = 0;
+  if (ba.enabled) { cost.barista = (+ba.salary || 0) * sm * er * (+ba.fte || 0) / 100; payrollBase += cost.barista; }
+  if (ba.coffeeMode === 'free') {
+    cups = clients * (+ba.takeRate || 0) / 100;
+    cost.coffee = cups * (+ba.costPerCup || 0);
+  } else if (ba.coffeeMode === 'paid') {
+    cups = (+ba.cupsPerDay || 0) * k * st.daysPerMonth;
+    const g = cups * (+ba.price || 0);
+    rev.coffee = g / vC;
+    cost.coffee = cups * (+ba.costPerCup || 0);
+    cost.card += card(g);
+  }
+
+  // λιανική
+  const rg = (+s.retail.sales || 0) * k;
+  rev.retail = rg / vP;
+  cost.retail = rev.retail * (1 - (+s.retail.margin || 0) / 100);
+  cost.card += card(rg);
+
+  cost.fixed = s.fixed.reduce((a, x) => a + (+x.amount || 0), 0);
+
+  const revenue = rev.services + rev.chairRent + rev.coffee + rev.retail;
+  const costs = Object.values(cost).reduce((a, b) => a + b, 0);
+  const preTax = revenue - costs;
+  const tax = Math.max(0, preTax) * st.corpTax / 100;
+  const net = preTax - tax;
+  const dist = net > 0 ? net * (1 - st.dividendTax / 100) : net;
+  const grossReceipts = shopGross + (ba.coffeeMode === 'paid' ? cups * (+ba.price || 0) : 0) + rg;
+  return { barbers, rev, cost, revenue, costs, preTax, tax, net, dist, clients, shopCuts, shopGross, shopNet, cups, payrollBase, grossReceipts, avgTicket: at };
+}
+
+function capexTotals(s, R) {
+  const cats = {};
+  let items = 0;
+  s.capex.forEach(x => { cats[x.cat] = cats[x.cat] || 0; if (x.on) { cats[x.cat] += +x.amount || 0; items += +x.amount || 0; } });
+  const contingency = items * s.settings.contingencyPct / 100;
+  const reserve = s.settings.reserveMonths * (R.cost.fixed + R.payrollBase);
+  return { cats, items, contingency, reserve, spend: items + contingency, total: items + contingency + reserve };
+}
+
+function rampK(s, m) {
+  const st = s.settings, r = Math.max(0, st.rampMonths | 0), a = st.rampStart / 100;
+  if (r <= 0) return 1;
+  return Math.min(1, a + (1 - a) * (m - 1) / r);
+}
+
+function cashflow(s, C) {
+  const H = s.settings.horizon, cum = [], monthly = [];
+  let c = -C.spend, payback = null, min = c;
+  for (let m = 1; m <= H; m++) {
+    const R = compute(s, { k: rampK(s, m) });
+    monthly.push(R.net); c += R.net; cum.push(c);
+    if (c < min) min = c;
+    if (payback === null && c >= 0) payback = m;
+  }
+  return { start: -C.spend, cum, monthly, payback, min };
+}
+
+function breakeven(s) {
+  const p0 = compute(s, { k: 0 }).preTax, p1 = compute(s, { k: 1 }).preTax;
+  const work = s.barbers.filter(b => b.mode !== 'rent');
+  const avg = work.length ? work.reduce((a, b) => a + (+b.cutsPerDay || 0), 0) / work.length : 0;
+  if (p1 <= p0 || !work.length) return { k: null, cpd: null, avg };
+  const kk = -p0 / (p1 - p0);
+  return { k: kk, cpd: kk * avg, avg, clientsMonth: kk * avg * work.length * s.settings.daysPerMonth };
+}
+
+/* =========================================================
+   UI HELPERS
+   ========================================================= */
+const val = p => { const v = getPath(S, p); return v == null ? '' : v; };
+function field(p, label, o = {}) {
+  return `<label class="f"><span>${label}</span><div class="inp"><input type="number" inputmode="decimal" data-k="${p}" data-t="n" value="${esc(val(p))}" step="${o.step ?? 'any'}"${o.min != null ? ` min="${o.min}"` : ''}${o.rr ? ' data-rr' : ''}>${o.suf ? `<i>${o.suf}</i>` : ''}</div>${o.help ? `<em>${o.help}</em>` : ''}</label>`;
+}
+function textIn(p, cls = '') { return `<input class="txt ${cls}" data-k="${p}" data-t="s" value="${esc(val(p))}">`; }
+function check(p, label, rr) { return `<label class="chk"><input type="checkbox" data-k="${p}" data-t="b"${val(p) ? ' checked' : ''}${rr ? ' data-rr' : ''}> ${label}</label>`; }
+function select(p, opts, rr = true) {
+  return `<select class="sel" data-k="${p}" data-t="s"${rr ? ' data-rr' : ''}>${opts.map(([v, l]) => `<option value="${v}"${val(p) === v ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
+}
+const $ = id => document.getElementById(id);
+const setHTML = (id, h) => { const e = $(id); if (e) e.innerHTML = h; };
+function row(l, v, cls = '') { return `<div class="row ${cls}"><span class="l">${l}</span><span>${v}</span></div>`; }
+function toast(t) { const e = $('toast'); e.textContent = t; e.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('on'), 1800); }
+
+/* =========================================================
+   TABS
+   ========================================================= */
+const TABS = {
+  overview: { label: 'Επισκόπηση', render: rOverview, fill: fOverview },
+  barbers: { label: 'Κουρείς & τιμές', render: rBarbers, fill: fBarbers },
+  coffee: { label: 'Καφέ & λιανική', render: rCoffee, fill: fCoffee },
+  capex: { label: 'Έξοδα έναρξης', render: rCapex, fill: fCapex },
+  fixed: { label: 'Μηνιαία έξοδα', render: rFixed, fill: fFixed },
+  partners: { label: 'Εταίροι', render: rPartners, fill: fPartners },
+  settings: { label: 'Παραδοχές', render: rSettings, fill: () => {} }
+};
+
+/* ---------- Overview ---------- */
+function rOverview() {
+  return `
+  <h2>Πόσο βγάζει το μαγαζί</h2>
+  <p class="lead">Κουρείο 75 τ.μ. στην Καλαμάτα με ${S.barbers.length} θέσεις και γωνιά καφέ. Άλλαξε πόσους κουρεύει ο καθένας και τις τιμές· όλα τα νούμερα ενημερώνονται αμέσως. Τα ποσά είναι μηνιαία, χωρίς ΦΠΑ, εκτός αν γράφει «με ΦΠΑ».</p>
+  <div class="kgrid" id="ov-kpis"></div>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Γρήγορες ρυθμίσεις</h3>
+      ${S.barbers.map((b, i) => `
+        <div class="slider">
+          <div class="top"><span>${esc(b.name)} <span class="mode">${MODES[b.mode].label}</span></span><span><b data-show="barbers.${i}.cutsPerDay">${b.cutsPerDay}</b> <span class="small">κουρ./ημέρα</span></span></div>
+          <input type="range" min="0" max="24" step="1" data-k="barbers.${i}.cutsPerDay" data-t="n" value="${b.cutsPerDay}">
+        </div>`).join('')}
+      <div class="fields" style="margin-top:6px">
+        ${S.services.map((x, i) => field(`services.${i}.price`, esc(x.name), { suf: '€', step: 0.5 })).join('')}
+      </div>
+      <div class="note" id="ov-ticket"></div>
+    </div>
+    <div class="card"><h3>Μηνιαίος λογαριασμός (πλήρης λειτουργία)</h3><div id="ov-pl"></div></div>
+  </div>
+  <div class="card sec"><h3>Ταμείο από την πρώτη μέρα</h3><p class="small" style="margin-top:-6px" id="ov-cf-sub"></p><div id="ov-cf"></div></div>
+  <div class="grid g2 sec">
+    <div class="card"><h3>Πού πάει κάθε κούρεμα</h3><div id="ov-cut"></div></div>
+    <div class="card"><h3>Μισθός, ποσοστό ή ενοικίαση;</h3><p class="small" style="margin-top:-6px">Αν όλοι οι κουρείς (εκτός εταίρων) δούλευαν με το ίδιο μοντέλο, με τα σημερινά νούμερα:</p><div class="models" id="ov-models"></div><div class="note" id="ov-models-note"></div></div>
+  </div>
+  <div class="card sec">
+    <h3>Καθαρό κέρδος/μήνα ανά κουρέματα και τιμή</h3>
+    <p class="small" style="margin-top:-6px">Μετά από φόρο. Κάθε κουρέας κάνει τα κουρέματα της γραμμής, με τη μέση απόδειξη της στήλης (με ΦΠΑ).</p>
+    <div class="scroll" id="ov-heat"></div>
+  </div>`;
+}
+
+function fOverview(R) {
+  const C = capexTotals(S, R), CF = cashflow(S, C), BE = breakeven(S);
+  const st = S.settings;
+  setHTML('ov-kpis', [
+    ['Τζίρος/μήνα (με ΦΠΑ)', eur(R.grossReceipts + R.rev.chairRent * (1 + st.vatServices / 100)), `${num(R.clients)} πελάτες`],
+    ['Κέρδος προ φόρων', `<span class="${sgn(R.preTax)}">${eur(R.preTax)}</span>`, `${eur(R.preTax * 12)} / έτος`],
+    ['Καθαρό μετά φόρων', `<span class="${sgn(R.net)}">${eur(R.net)}</span>`, `${eur(R.net * 12)} / έτος`],
+    ['Απαιτούμενο κεφάλαιο', eur(C.total), `έξοδα ${eur(C.spend)} + αποθεματικό ${eur(C.reserve)}`],
+    ['Απόσβεση', CF.payback ? `${CF.payback} μήνες` : `> ${st.horizon} μήνες`, CF.payback ? `με σταδιακή εκκίνηση ${st.rampMonths} μηνών` : 'δεν αποσβένεται'],
+    ['Νεκρό σημείο', BE.cpd != null ? `${num1(BE.cpd)} κουρ./ημέρα` : '—', BE.cpd != null ? `ανά κουρέα (σήμερα ${num1(BE.avg)})` : 'δεν υπάρχουν μισθωτοί/ποσοστό']
+  ].map(([l, v, e]) => `<div class="card kpi"><span>${l}</span><b>${v}</b><em>${e}</em></div>`).join(''));
+
+  setHTML('ov-ticket', `Μέση απόδειξη <b>${eur2(R.avgTicket)}</b> με ΦΠΑ (${eur2(R.avgTicket / (1 + st.vatServices / 100))} καθαρά), με βάση το μείγμα υπηρεσιών. Αλλάζεις μείγμα στην καρτέλα «Κουρείς & τιμές».`);
+
+  const r = R.rev, c = R.cost;
+  setHTML('ov-pl',
+    row('Κουρέματα (μισθωτοί, ποσοστό, εταίροι)', eur(r.services)) +
+    (r.chairRent ? row('Ενοίκια θέσεων', eur(r.chairRent)) : '') +
+    (r.coffee ? row('Πωλήσεις καφέ', eur(r.coffee)) : '') +
+    (r.retail ? row('Πωλήσεις προϊόντων', eur(r.retail)) : '') +
+    row('Σύνολο εσόδων', eur(R.revenue), 'sub') +
+    row('Μισθοί & αμοιβές κουρέων', '−' + eur(c.staff)) +
+    (c.barista ? row('Μπαρίστα (με εισφορές)', '−' + eur(c.barista)) : '') +
+    row('Πάγια (ενοίκιο, ρεύμα, λογιστής…)', '−' + eur(c.fixed)) +
+    row('Αναλώσιμα κουρείου', '−' + eur(c.consum)) +
+    (c.coffee ? row('Πρώτη ύλη καφέ', '−' + eur(c.coffee)) : '') +
+    (c.retail ? row('Κόστος προϊόντων', '−' + eur(c.retail)) : '') +
+    row('Προμήθειες καρτών', '−' + eur(c.card)) +
+    row('Κέρδος προ φόρων', `<span class="${sgn(R.preTax)}">${eur(R.preTax)}</span>`, 'sub') +
+    row(`Φόρος εταιρείας ${st.corpTax}%`, '−' + eur(R.tax)) +
+    row('Καθαρό κέρδος', `<span class="${sgn(R.net)}">${eur(R.net)}</span>`, 'tot') +
+    row(`Προς διανομή (μετά φόρο μερισμάτων ${st.dividendTax}%)`, eur(R.dist)));
+
+  setHTML('ov-cf-sub', `Ξεκινά από −${eur(C.spend)} (έξοδα έναρξης + απρόβλεπτα). Πρώτος μήνας στο ${st.rampStart}% της πελατείας, πλήρης μετά από ${st.rampMonths} μήνες. ` +
+    `Χαμηλότερο σημείο ταμείου: <b>${eur(CF.min)}</b>. ` + (CF.payback ? `Τα λεφτά επιστρέφουν τον <b>${CF.payback}ο μήνα</b>.` : `<b class="neg">Δεν επιστρέφουν μέσα σε ${st.horizon} μήνες.</b>`) +
+    (-CF.min > C.spend + C.reserve ? ` <b class="neg">Το ταμείο πέφτει στα ${eur(CF.min)} — το αποθεματικό των ${eur(C.reserve)} δεν φτάνει.</b>` : ''));
+  setHTML('ov-cf', cashSvg(CF, Math.max(320, ($('ov-cf') || {}).clientWidth || 800)));
+
+  // per-cut
+  if (R.shopCuts > 0) {
+    const n = R.shopCuts, g = R.shopGross / n;
+    const vat = (R.shopGross - R.shopNet) / n;
+    const staff = c.staff / n, cons = c.consum / n;
+    const cardc = R.barbers.reduce((a, b) => a + b.card, 0) / n;
+    const tax = R.tax / n, prof = R.net / n;
+    const over = g - vat - staff - cons - cardc - tax - prof;
+    const parts = [
+      ['ΦΠΑ', vat, 'var(--c6)'], ['Κουρέας (μισθός/ποσοστό)', staff, 'var(--c2)'], ['Αναλώσιμα & POS', cons + cardc, 'var(--c3)'],
+      ['Ενοίκιο, μπαρίστα, πάγια', over, 'var(--c5)'], ['Φόρος', tax, 'var(--c4)'], [prof >= 0 ? 'Κέρδος' : 'Ζημιά', prof, 'var(--c1)']
+    ];
+    const tot = parts.reduce((a, p) => a + Math.max(0, p[1]), 0) || 1;
+    setHTML('ov-cut', `<p class="small" style="margin-top:-6px">Μέση απόδειξη ${eur2(g)} — από κουρέματα που εισπράττει το μαγαζί.</p>
+      <div class="stack">${parts.filter(p => p[1] > 0).map(p => `<div style="width:${p[1] / tot * 100}%;background:${p[2]}" title="${p[0]}"></div>`).join('')}</div>
+      <div class="legend">${parts.map(p => `<div class="row"><span><i class="dot" style="background:${p[2]}"></i>${p[0]}</span><span class="${p[1] < 0 ? 'neg' : ''}">${eur2(p[1])}</span></div>`).join('')}</div>`);
+  } else setHTML('ov-cut', '<p class="small">Όλοι οι κουρείς είναι σε ενοικίαση θέσης — το μαγαζί δεν εισπράττει κουρέματα.</p>');
+
+  // models
+  const ms = ['salary', 'commission', 'rent'].map(m => ({ m, R: compute(S, { mode: m }) }));
+  const best = ms.reduce((a, b) => b.R.net > a.R.net ? b : a);
+  setHTML('ov-models', ms.map(({ m, R: x }) => {
+    const C2 = capexTotals(S, x);
+    return `<div class="model ${m === best.m ? 'best' : ''}"><span class="small">${{ salary: 'Όλοι μισθωτοί', commission: 'Όλοι με ποσοστό', rent: 'Όλοι με ενοικίαση θέσης' }[m]}</span><b class="${sgn(x.net)}">${eur(x.net)}</b><span class="small">καθαρό/μήνα · αποθεματικό ${eur(C2.reserve)}</span></div>`;
+  }).join(''));
+  const avgB = S.barbers.filter(b => b.mode !== 'partner');
+  const rentAvg = avgB.length ? avgB.reduce((a, b) => a + (+b.rent || 0), 0) / avgB.length : 0;
+  const pctAvg = avgB.length ? avgB.reduce((a, b) => a + (+b.barberPct || 0), 0) / avgB.length : 0;
+  setHTML('ov-models-note', `Ενοίκιο θέσης ~${eur(rentAvg)}/μήνα, ποσοστό κουρέα ~${num(pctAvg)}%. Μισθωτοί = μεγαλύτερο κέρδος όταν κουρεύουν πολύ, αλλά σταθερό κόστος και ρίσκο όταν το μαγαζί είναι άδειο. Ενοικίαση = μικρό αλλά σίγουρο έσοδο.`);
+
+  // heat
+  const rows = [6, 8, 10, 12, 14, 16], cols = [12, 14, 16, 18, 20, 22];
+  const vals = rows.map(r => cols.map(t => compute(S, { cpd: r, ticket: t }).net));
+  const mx = Math.max(1, ...vals.flat().map(Math.abs));
+  const curR = rows.reduce((a, b) => Math.abs(b - BE.avg) < Math.abs(a - BE.avg) ? b : a);
+  const curC = cols.reduce((a, b) => Math.abs(b - R.avgTicket) < Math.abs(a - R.avgTicket) ? b : a);
+  setHTML('ov-heat', `<table class="heat"><tr><th>κουρ./ημέρα</th>${cols.map(c => `<th>${c} €</th>`).join('')}</tr>${rows.map((r, i) => `<tr><th>${r}</th>${cols.map((c, j) => {
+    const v = vals[i][j], a = Math.min(1, Math.abs(v) / mx) * 0.85 + 0.08;
+    const bg = v >= 0 ? `color-mix(in srgb,var(--pos) ${a * 100}%,var(--surface))` : `color-mix(in srgb,var(--neg) ${a * 100}%,var(--surface))`;
+    const fg = a > 0.5 ? '#fff' : 'var(--ink)';
+    return `<td style="background:${bg};color:${fg}" class="${r === curR && c === curC ? 'cur' : ''}">${kEur(v)}</td>`;
+  }).join('')}</tr>`).join('')}</table><p class="small">Περίγραμμα = πιο κοντά στα σημερινά νούμερα.</p>`);
+}
+
+function cashSvg(CF, W = 800) {
+  const H = W < 600 ? 220 : 260, P = { l: 52, r: 10, t: 18, b: 28 };
+  const pts = [CF.start, ...CF.cum], n = pts.length - 1;
+  let lo = Math.min(0, ...pts), hi = Math.max(0, ...pts);
+  if (hi - lo < 1) hi = lo + 1;
+  const pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
+  const x = i => P.l + (W - P.l - P.r) * i / n;
+  const y = v => P.t + (H - P.t - P.b) * (hi - v) / (hi - lo);
+  const step = niceStep((hi - lo) / 4);
+  let grid = '';
+  for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) grid += `<line x1="${P.l}" x2="${W - P.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${P.l - 8}" y="${y(v) + 4}" text-anchor="end">${kEur(v)}</text>`;
+  let xl = '';
+  for (let i = 0; i <= n; i += (W < 600 ? 12 : 6)) xl += `<text x="${x(i)}" y="${H - 8}" text-anchor="${i === 0 ? 'start' : i + (W < 600 ? 12 : 6) > n ? 'end' : 'middle'}">${i === 0 ? 'Έναρξη' : i + 'ος'}</text>`;
+  const line = pts.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
+  const area = `${line}L${x(n)},${y(0)}L${x(0)},${y(0)}Z`;
+  const pb = CF.payback ? `<line x1="${x(CF.payback)}" x2="${x(CF.payback)}" y1="${P.t}" y2="${H - P.b}" stroke="var(--pos)" stroke-dasharray="4 4"/><circle cx="${x(CF.payback)}" cy="${y(pts[CF.payback])}" r="5" fill="var(--pos)"/><text x="${x(CF.payback) + (x(CF.payback) > W * 0.65 ? -7 : 7)}" y="${P.t - 4}" text-anchor="${x(CF.payback) > W * 0.65 ? 'end' : 'start'}" style="fill:var(--pos);font-weight:600">απόσβεση · μήνας ${CF.payback}</text>` : '';
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Σωρευτικό ταμείο ανά μήνα">
+    <defs><clipPath id="above"><rect x="0" y="0" width="${W}" height="${y(0)}"/></clipPath><clipPath id="below"><rect x="0" y="${y(0)}" width="${W}" height="${H}"/></clipPath></defs>
+    ${grid}${xl}
+    <path d="${area}" fill="var(--pos)" opacity=".14" clip-path="url(#above)"/>
+    <path d="${area}" fill="var(--neg)" opacity=".12" clip-path="url(#below)"/>
+    <line x1="${P.l}" x2="${W - P.r}" y1="${y(0)}" y2="${y(0)}" stroke="var(--muted)" stroke-width="1.2"/>
+    <path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>
+    ${pb}
+  </svg>`;
+}
+function niceStep(raw) { const p = Math.pow(10, Math.floor(Math.log10(raw || 1))); const f = raw / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; }
+
+/* ---------- Barbers ---------- */
+function rBarbers() {
+  return `
+  <h2>Κουρείς & τιμοκατάλογος</h2>
+  <p class="lead">Κάθε κουρέας μπορεί να έχει διαφορετικό μοντέλο συνεργασίας. Η «μέση απόδειξη» βγαίνει από τον τιμοκατάλογο και το μείγμα υπηρεσιών· βάλε δική του τιμή μόνο αν κάποιος χρεώνει διαφορετικά.</p>
+  <div class="card">
+    <h3>Τιμοκατάλογος (με ΦΠΑ)</h3>
+    <div class="scroll"><table class="tbl"><tr><th>Υπηρεσία</th><th class="num">Τιμή</th><th class="num">% πελατών</th><th></th></tr>
+    ${S.services.map((x, i) => `<tr><td>${textIn(`services.${i}.name`)}</td>
+      <td><div class="inp"><input type="number" step="0.5" data-k="services.${i}.price" data-t="n" value="${x.price}"><i>€</i></div></td>
+      <td><div class="inp"><input type="number" step="1" data-k="services.${i}.mix" data-t="n" value="${x.mix}"><i>%</i></div></td>
+      <td><button class="x" data-act="delService" data-i="${i}" title="Διαγραφή">×</button></td></tr>`).join('')}
+    </table></div>
+    <div class="btns" style="margin-top:10px;justify-content:space-between;align-items:center"><button class="btn sec2" data-act="addService">+ Υπηρεσία</button><span id="bb-ticket"></span></div>
+  </div>
+  <div class="grid g3 sec" id="bb-cards">
+    ${S.barbers.map((b, i) => barberCard(b, i)).join('')}
+    <button class="card" data-act="addBarber" style="border-style:dashed;color:var(--muted);min-height:120px;font-weight:600">+ Προσθήκη κουρέα</button>
+  </div>
+  <div class="card sec"><h3>Σύνοψη ανά κουρέα</h3><div class="scroll" id="bb-sum"></div></div>`;
+}
+function barberCard(b, i) {
+  const p = `barbers.${i}`;
+  let f = '';
+  if (b.mode === 'salary') f = field(`${p}.salary`, 'Μικτός μισθός', { suf: '€/μήνα', step: 10, help: 'Κατώτατος: 920 €' }) + field(`${p}.bonusPct`, 'Bonus επί τζίρου', { suf: '%', step: 1, help: 'Προαιρετικό κίνητρο' });
+  else if (b.mode === 'commission') f = field(`${p}.barberPct`, 'Ποσοστό κουρέα', { suf: '%', step: 1, help: 'Επί του καθαρού (χωρίς ΦΠΑ)' });
+  else if (b.mode === 'rent') f = field(`${p}.rent`, 'Ενοίκιο θέσης', { suf: '€/μήνα', step: 10 });
+  return `<div class="card bc">
+    <div class="hd">${textIn(`${p}.name`, 'name')}<button class="x" data-act="delBarber" data-i="${i}" title="Αφαίρεση">×</button></div>
+    ${select(`${p}.mode`, Object.entries(MODES).map(([k, m]) => [k, m.label]))}
+    <p class="small" style="margin:6px 0 4px">${MODES[b.mode].help}</p>
+    <div class="slider"><div class="top"><span class="small">Κουρέματα / ημέρα</span><b data-show="${p}.cutsPerDay">${b.cutsPerDay}</b></div>
+      <input type="range" min="0" max="24" step="1" data-k="${p}.cutsPerDay" data-t="n" value="${b.cutsPerDay}"></div>
+    <div class="fields">${f}${field(`${p}.ticket`, 'Δική του μέση τιμή', { suf: '€', step: 0.5, help: '0 = από τιμοκατάλογο' })}</div>
+    <div class="res" id="bres-${i}"></div>
+  </div>`;
+}
+function fBarbers(R) {
+  setHTML('bb-ticket', `Μέση απόδειξη: <b>${eur2(R.avgTicket)}</b>`);
+  R.barbers.forEach((b, i) => setHTML(`bres-${i}`, `
+    <div><span>Πελάτες/μήνα</span><b>${num(b.cuts)}</b></div>
+    <div><span>Τζίρος (με ΦΠΑ)</span><b>${eur(b.gross)}</b></div>
+    <div><span>Μένει στο μαγαζί</span><b class="${sgn(b.contrib)}">${eur(b.contrib)}</b></div>
+    <div><span>Παίρνει ο ίδιος</span><b>${b.mode === 'partner' ? '—' : eur(b.barberEarn)}</b></div>
+    <div style="grid-column:1/-1"><span>${b.mode === 'partner' ? 'Εταίρος' : esc(b.barberNote)}</span></div>`));
+  const t = R.barbers.reduce((a, b) => ({ cuts: a.cuts + b.cuts, gross: a.gross + b.gross, contrib: a.contrib + b.contrib }), { cuts: 0, gross: 0, contrib: 0 });
+  setHTML('bb-sum', `<table class="tbl"><tr><th>Κουρέας</th><th>Μοντέλο</th><th class="num">Πελάτες</th><th class="num">Τζίρος με ΦΠΑ</th><th class="num">Κόστος για μαγαζί</th><th class="num">Μένει στο μαγαζί</th></tr>
+    ${R.barbers.map(b => `<tr><td>${esc(b.name)}</td><td>${MODES[b.mode].label}</td><td class="num">${num(b.cuts)}</td><td class="num">${eur(b.gross)}</td><td class="num">${eur(b.staff + b.consum + b.card)}</td><td class="num ${sgn(b.contrib)}">${eur(b.contrib)}</td></tr>`).join('')}
+    <tr style="font-weight:700"><td>Σύνολο</td><td></td><td class="num">${num(t.cuts)}</td><td class="num">${eur(t.gross)}</td><td></td><td class="num ${sgn(t.contrib)}">${eur(t.contrib)}</td></tr></table>
+    <p class="small">«Μένει στο μαγαζί» = ό,τι φέρνει ο κουρέας μείον μισθό/ποσοστό, αναλώσιμα και προμήθεια κάρτας. Από αυτό πληρώνονται ενοίκιο, μπαρίστα και πάγια.</p>`);
+}
+
+/* ---------- Coffee ---------- */
+function rCoffee() {
+  const b = S.barista;
+  return `
+  <h2>Μπαρίστα, καφές & προϊόντα</h2>
+  <p class="lead">Ο καφές μπορεί να είναι κερασμένος (μέρος της εμπειρίας) ή να πουλιέται. Η πώληση καφέ θέλει επιπλέον γνωστοποίηση ως κατάστημα υγειονομικού ενδιαφέροντος· ο κερασμένος είναι απλούστερος.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Μπαρίστα</h3>
+      ${check('barista.enabled', 'Έχουμε μπαρίστα', true)}
+      ${b.enabled ? `<div class="fields" style="margin-top:10px">${field('barista.salary', 'Μικτός μισθός', { suf: '€/μήνα', step: 10, help: 'Κατώτατος 920 € (από 1/4/2026)' })}${field('barista.fte', 'Απασχόληση', { suf: '%', step: 5, help: '100 = πλήρης, 50 = μερική' })}</div>` : ''}
+      <div id="cf-barista"></div>
+    </div>
+    <div class="card">
+      <h3>Καφές</h3>
+      ${select('barista.coffeeMode', [['free', 'Κερασμένος στους πελάτες'], ['paid', 'Πωλείται'], ['none', 'Χωρίς καφέ']])}
+      <div class="fields" style="margin-top:10px">
+        ${b.coffeeMode === 'free' ? field('barista.takeRate', 'Πελάτες που παίρνουν καφέ', { suf: '%', step: 5 }) : ''}
+        ${b.coffeeMode === 'paid' ? field('barista.price', 'Τιμή (με ΦΠΑ)', { suf: '€', step: 0.1 }) + field('barista.cupsPerDay', 'Καφέδες / ημέρα', { suf: 'τεμ.', step: 1 }) : ''}
+        ${b.coffeeMode !== 'none' ? field('barista.costPerCup', 'Κόστος ανά καφέ', { suf: '€', step: 0.05, help: 'Καφές, γάλα, ποτήρι, ζάχαρη' }) : ''}
+      </div>
+      <div id="cf-coffee"></div>
+    </div>
+    <div class="card">
+      <h3>Πωλήσεις προϊόντων</h3>
+      <div class="fields">${field('retail.sales', 'Πωλήσεις/μήνα (με ΦΠΑ)', { suf: '€', step: 50 })}${field('retail.margin', 'Περιθώριο κέρδους', { suf: '%', step: 1 })}</div>
+      <div id="cf-retail"></div>
+    </div>
+  </div>`;
+}
+function fCoffee(R) {
+  const b = S.barista;
+  setHTML('cf-barista', b.enabled ? `<div class="note">Κόστος για το μαγαζί: <b>${eur(R.cost.barista)}/μήνα</b> (μισθός × ${S.settings.salaryMonths}/12 + εισφορές ${num1(S.settings.employerRate)}%).</div>` : '');
+  let h = '';
+  if (b.coffeeMode === 'free') h = `${row('Καφέδες/μήνα', num(R.cups))}${row('Κόστος πρώτης ύλης', '−' + eur(R.cost.coffee))}${row('Καφές + μπαρίστα συνολικά', '−' + eur(R.cost.coffee + R.cost.barista), 'tot')}${row('Ανά πελάτη', eur2((R.cost.coffee + R.cost.barista) / (R.clients || 1)))}`;
+  else if (b.coffeeMode === 'paid') { const p = R.rev.coffee - R.cost.coffee - R.cost.barista; h = `${row('Καφέδες/μήνα', num(R.cups))}${row('Έσοδα (χωρίς ΦΠΑ)', eur(R.rev.coffee))}${row('Πρώτη ύλη', '−' + eur(R.cost.coffee))}${row('Μπαρίστα', '−' + eur(R.cost.barista))}${row('Αποτέλεσμα καφέ', `<span class="${sgn(p)}">${eur(p)}</span>`, 'tot')}${row('Καφέδες/ημέρα για να καλυφθεί ο μπαρίστα', num(R.cost.barista / Math.max(0.01, (b.price / (1 + S.settings.vatCoffee / 100) - b.costPerCup)) / S.settings.daysPerMonth))}`; }
+  setHTML('cf-coffee', h ? `<div style="margin-top:10px">${h}</div>` : '');
+  setHTML('cf-retail', `<div style="margin-top:10px">${row('Έσοδα χωρίς ΦΠΑ', eur(R.rev.retail))}${row('Κόστος προϊόντων', '−' + eur(R.cost.retail))}${row('Μικτό κέρδος', eur(R.rev.retail - R.cost.retail), 'tot')}</div>`);
+}
+
+/* ---------- Capex ---------- */
+function rCapex() {
+  const cats = [...new Set(S.capex.map(x => x.cat))];
+  return `
+  <h2>Έξοδα για να ανοίξει το μαγαζί</h2>
+  <p class="lead">Εκτιμήσεις για Καλαμάτα, χωρίς ΦΠΑ όπου μπορεί να συμψηφιστεί. Ξετίκαρε ό,τι δεν χρειάζεται, άλλαξε ποσά με τις προσφορές που θα πάρετε.</p>
+  <div class="kgrid" id="cx-kpis"></div>
+  <div class="grid g2">
+    ${cats.map((cat, ci) => `<div class="card">
+      <div class="cathd"><b>${esc(cat)}</b><span id="cx-cat-${ci}"></span></div>
+      ${S.capex.map((x, i) => x.cat !== cat ? '' : `<div class="cap-item capx ${x.on ? '' : 'off'}">
+        <input type="checkbox" data-k="capex.${i}.on" data-t="b" data-rr${x.on ? ' checked' : ''} style="accent-color:var(--accent)">
+        ${textIn(`capex.${i}.name`)}
+        <div class="inp"><input type="number" step="50" data-k="capex.${i}.amount" data-t="n" value="${x.amount}"><i>€</i></div>
+        <button class="x" data-act="delCapex" data-i="${i}" title="Διαγραφή">×</button>
+        ${x.note ? `<div class="nt">${esc(x.note)}</div>` : ''}
+      </div>`).join('')}
+      <button class="btn sec2" style="margin-top:10px" data-act="addCapex" data-cat="${esc(cat)}">+ Έξοδο</button>
+    </div>`).join('')}
+    <div class="card flat">
+      <h3>Σύνολο</h3>
+      <div id="cx-tot"></div>
+      <div class="fields" style="margin-top:10px">${field('settings.contingencyPct', 'Απρόβλεπτα', { suf: '%', step: 1 })}${field('settings.reserveMonths', 'Αποθεματικό κίνησης', { suf: 'μήνες', step: 0.5, help: 'Πάγια + μισθοδοσία' })}</div>
+    </div>
+  </div>`;
+}
+function fCapex(R) {
+  const C = capexTotals(S, R);
+  Object.values(C.cats).forEach((v, ci) => setHTML(`cx-cat-${ci}`, `<b>${eur(v)}</b>`));
+  setHTML('cx-kpis', [['Έξοδα έναρξης', eur(C.items)], ['+ Απρόβλεπτα', eur(C.contingency)], ['+ Αποθεματικό', eur(C.reserve)], ['Απαιτούμενο κεφάλαιο', `<span style="color:var(--accent)">${eur(C.total)}</span>`]]
+    .map(([l, v]) => `<div class="card kpi"><span>${l}</span><b>${v}</b></div>`).join(''));
+  setHTML('cx-tot', Object.entries(C.cats).map(([k, v]) => row(esc(k), eur(v))).join('') +
+    row('Σύνολο εξόδων', eur(C.items), 'sub') + row(`Απρόβλεπτα ${S.settings.contingencyPct}%`, eur(C.contingency)) +
+    row(`Αποθεματικό ${num1(S.settings.reserveMonths)} μηνών`, eur(C.reserve)) + row('Απαιτούμενο κεφάλαιο', eur(C.total), 'tot'));
+}
+
+/* ---------- Fixed ---------- */
+function rFixed() {
+  return `
+  <h2>Μηνιαία έξοδα</h2>
+  <p class="lead">Πάγια που πληρώνονται κάθε μήνα όσοι πελάτες κι αν έρθουν. Μισθοί και αναλώσιμα υπολογίζονται αυτόματα από τις άλλες καρτέλες.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Πάγια</h3>
+      ${S.fixed.map((x, i) => `<div class="cap-item" style="grid-template-columns:1fr 120px 28px">
+        ${textIn(`fixed.${i}.name`)}
+        <div class="inp"><input type="number" step="10" data-k="fixed.${i}.amount" data-t="n" value="${x.amount}"><i>€</i></div>
+        <button class="x" data-act="delFixed" data-i="${i}" title="Διαγραφή">×</button>
+        ${x.note ? `<div class="nt" style="grid-column:1/3">${esc(x.note)}</div>` : ''}
+      </div>`).join('')}
+      <button class="btn sec2" style="margin-top:10px" data-act="addFixed">+ Έξοδο</button>
+    </div>
+    <div class="card flat"><h3>Όλα τα μηνιαία έξοδα</h3><div id="fx-all"></div></div>
+  </div>`;
+}
+function fFixed(R) {
+  const c = R.cost;
+  const items = [['Μισθοί & αμοιβές κουρέων', c.staff, 'var(--c2)'], ['Μπαρίστα', c.barista, 'var(--c3)'], ['Πάγια', c.fixed, 'var(--c5)'], ['Αναλώσιμα', c.consum, 'var(--c4)'], ['Καφές & προϊόντα', c.coffee + c.retail, 'var(--c1)'], ['Προμήθειες καρτών', c.card, 'var(--c6)']];
+  const mx = Math.max(...items.map(x => x[1]), 1);
+  setHTML('fx-all', `<div class="bars">${items.map(([l, v, col]) => `<div class="b"><div class="bl"><span>${l}</span><b>${eur(v)}</b></div><div class="bt"><div class="bf" style="width:${v / mx * 100}%;background:${col}"></div></div></div>`).join('')}</div>` +
+    row('Σύνολο εξόδων/μήνα', eur(R.costs), 'tot') + row('Χωρίς καθόλου πελάτες (μισθοί + πάγια)', eur(R.cost.fixed + R.payrollBase)));
+}
+
+/* ---------- Partners ---------- */
+function rPartners() {
+  return `
+  <h2>Εταίροι</h2>
+  <p class="lead">Ποιος βάζει πόσα και πώς μοιράζονται τα κέρδη. Ο Πάνος φέρνει την πιστοποίηση κουρέα που χρειάζεται για τη λειτουργία· το μερίδιό του αντανακλά αυτή τη συνεισφορά.</p>
+  <div id="pt-warn"></div>
+  <div class="grid g3">
+    ${S.partners.map((p, i) => `<div class="card">
+      <div class="hd" style="display:flex;gap:8px;align-items:center">${textIn(`partners.${i}.name`, 'name')}<button class="x" data-act="delPartner" data-i="${i}" title="Αφαίρεση">×</button></div>
+      ${textIn(`partners.${i}.role`, 'small')}
+      <div class="fields" style="margin:10px 0">${field(`partners.${i}.capPct`, 'Βάζει από το κεφάλαιο', { suf: '%', step: 1 })}${field(`partners.${i}.share`, 'Παίρνει από τα κέρδη', { suf: '%', step: 1 })}</div>
+      <div id="pt-out-${i}"></div>
+    </div>`).join('')}
+    <button class="card" data-act="addPartner" style="border-style:dashed;color:var(--muted);min-height:120px;font-weight:600">+ Εταίρος</button>
+  </div>`;
+}
+function fPartners(R) {
+  const C = capexTotals(S, R), CF = cashflow(S, C);
+  const cs = S.partners.reduce((a, p) => a + (+p.capPct || 0), 0), ss = S.partners.reduce((a, p) => a + (+p.share || 0), 0);
+  setHTML('pt-warn', (Math.round(cs) !== 100 || Math.round(ss) !== 100) ? `<div class="note warn">Τα ποσοστά πρέπει να αθροίζουν 100%. Κεφάλαιο: ${num1(cs)}%, κέρδη: ${num1(ss)}%.</div>` : '');
+  const y1 = CF.monthly.slice(0, 12).reduce((a, b) => a + b, 0) * (1 - S.settings.dividendTax / 100);
+  S.partners.forEach((p, i) => {
+    const cap = C.total * (+p.capPct || 0) / 100, m = R.dist * (+p.share || 0) / 100;
+    const pb = cap > 0 && m > 0 ? cap / m : null;
+    setHTML(`pt-out-${i}`, `${row('Ποσό κεφαλαίου', eur(cap))}${row('Μερίδιο/μήνα (πλήρης λειτουργία)', `<span class="${sgn(m)}">${eur(m)}</span>`)}${row('Μερίδιο 1ου έτους', eur(y1 * (+p.share || 0) / 100))}${row('Μερίδιο/έτος μετά', eur(m * 12), 'sub')}${row('Επιστροφή του ποσού του', pb ? `~${num1(pb)} μήνες` : '—')}`);
+  });
+}
+
+/* ---------- Settings ---------- */
+function rSettings() {
+  const sc = scenarios();
+  return `
+  <h2>Παραδοχές & σενάρια</h2>
+  <p class="lead">Τα νούμερα αυτά επηρεάζουν όλους τους υπολογισμούς. Επιβεβαιώστε τα με τον λογιστή πριν από αποφάσεις.</p>
+  <div class="grid g2">
+    <div class="card"><h3>Λειτουργία</h3><div class="fields">
+      ${field('settings.daysPerMonth', 'Εργάσιμες ημέρες/μήνα', { step: 1, help: 'Ανά κουρέα' })}
+      ${field('settings.consumablePerCut', 'Αναλώσιμα/κούρεμα', { suf: '€', step: 0.1 })}
+      ${field('settings.rampStart', 'Πελατεία 1ου μήνα', { suf: '%', step: 5 })}
+      ${field('settings.rampMonths', 'Μήνες ως πλήρη πελατεία', { step: 1 })}
+      ${field('settings.horizon', 'Ορίζοντας γραφήματος', { suf: 'μήνες', step: 6 })}
+    </div></div>
+    <div class="card"><h3>Φόροι & εισφορές</h3><div class="fields">
+      ${field('settings.vatServices', 'ΦΠΑ κουρέματος', { suf: '%', step: 1 })}
+      ${field('settings.vatCoffee', 'ΦΠΑ καφέ', { suf: '%', step: 1 })}
+      ${field('settings.vatProducts', 'ΦΠΑ προϊόντων', { suf: '%', step: 1 })}
+      ${field('settings.employerRate', 'Εργοδοτικές εισφορές', { suf: '%', step: 0.01 })}
+      ${field('settings.salaryMonths', 'Μισθοί/έτος', { step: 0.5, help: '14 = με δώρα & επίδομα άδειας' })}
+      ${field('settings.corpTax', 'Φόρος εταιρείας', { suf: '%', step: 1 })}
+      ${field('settings.dividendTax', 'Φόρος μερισμάτων', { suf: '%', step: 1 })}
+      ${field('settings.cardShare', 'Πληρωμές με κάρτα', { suf: '%', step: 5 })}
+      ${field('settings.cardFee', 'Προμήθεια POS', { suf: '%', step: 0.1 })}
+    </div></div>
+    <div class="card"><h3>Σενάρια</h3>
+      <p class="small" style="margin-top:-6px">Όλες οι αλλαγές και τα σενάρια αποθηκεύονται αυτόματα και είναι κοινά για όλους τους εταίρους (κρυπτογραφημένα με τον κωδικό). Η «Επαναφορά αρχικών» αλλάζει τα νούμερα για όλους.</p>
+      <label class="f" style="margin-bottom:10px"><span>Το όνομά μου (φαίνεται ποιος έκανε την τελευταία αλλαγή)</span><div class="inp"><input id="whoName" value="${esc(who())}" placeholder="π.χ. Θωμάς"></div></label>
+      <div class="btns"><input class="txt" id="scnName" placeholder="Όνομα σεναρίου" style="flex:1;min-width:140px;border-color:var(--line);margin:0"><button class="btn" data-act="saveScn">Αποθήκευση</button></div>
+      <div style="margin-top:8px">${Object.keys(sc).length ? Object.keys(sc).map(n => `<div class="scn"><span>${esc(n)}</span><span class="btns"><button class="btn sec2" data-act="loadScn" data-n="${esc(n)}">Φόρτωση</button><button class="x" data-act="delScn" data-n="${esc(n)}">×</button></span></div>`).join('') : '<p class="small">Κανένα αποθηκευμένο σενάριο.</p>'}</div>
+      <div class="btns" style="margin-top:12px"><button class="btn sec2" data-act="export">Εξαγωγή αρχείου</button><button class="btn sec2" data-act="import">Εισαγωγή αρχείου</button><button class="btn sec2" data-act="print">Εκτύπωση</button><button class="btn sec2" data-act="reset" style="color:var(--neg)">Επαναφορά αρχικών</button></div>
+    </div>
+    <div class="card"><h3>Σημειώσεις & ρίσκα</h3>
+      <div class="small" style="display:flex;flex-direction:column;gap:8px">
+        <span><b>Κατώτατος μισθός:</b> 920 € μικτά από 1/4/2026· στόχος κυβέρνησης ~1.000 € ως το 2028. Οι μισθοί θα ανεβαίνουν.</span>
+        <span><b>Ενοικίαση θέσης:</b> ο κουρέας πρέπει να έχει δική του δραστηριότητα (μπλοκάκι) και γραπτή σύμβαση. Αν δουλεύει με ωράριο και οδηγίες του μαγαζιού, ο ΕΦΚΑ/η Επιθεώρηση Εργασίας μπορεί να το θεωρήσει εξαρτημένη εργασία — συζητήστε το με λογιστή/δικηγόρο.</span>
+        <span><b>Πιστοποίηση:</b> το κουρείο λειτουργεί με γνωστοποίηση και υπεύθυνο με άδεια άσκησης επαγγέλματος κουρέα (Πάνος). Αν φύγει ο Πάνος, χρειάζεται αντικαταστάτης — καλό να προβλέπεται στο καταστατικό.</span>
+        <span><b>Καφές:</b> η πώληση καφέ θέλει γνωστοποίηση ΚΥΕ και πιθανόν ξεχωριστό χώρο προετοιμασίας. Κερασμένος καφές = λιγότερη γραφειοκρατία.</span>
+        <span><b>ΦΠΑ:</b> οι τιμές του τιμοκαταλόγου περιλαμβάνουν ΦΠΑ 24%· το μαγαζί κρατά το 80,6%.</span>
+        <span><b>Εισφορές διαχειριστή:</b> αν κάποιος εταίρος είναι διαχειριστής ΙΚΕ ή ομόρρυθμος εταίρος ΟΕ, πληρώνει δικές του εισφορές ΕΦΚΑ (~250 €/μήνα). Πρόσθεσέ το στα μηνιαία αν ισχύει.</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* =========================================================
+   SCENARIOS
+   ========================================================= */
+function scenarios() { try { return JSON.parse(ls.get(LS_SCN)) || {}; } catch (e) { return {}; } }
+
+/* =========================================================
+   SHARED SYNC (Supabase) — state is encrypted in the browser
+   with a key derived from the site password; the server only
+   stores ciphertext and checks a write token.
+   ========================================================= */
+const SYNC_URL = 'https://miaaynxgowqyyivtdnhs.supabase.co';
+const SYNC_KEY = 'sb_publishable_6xYzhezNfoXDbCQ1GKzupA_bQcuel3X';
+const sync = { on: false, key: null, token: null, version: null, timer: null, pending: false, saving: false, state: 'local', by: '', at: null };
+const who = () => ls.get(LS_WHO) || '';
+const b64e = u => btoa(String.fromCharCode(...new Uint8Array(u)));
+const b64d = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+function setSync(st) {
+  sync.state = st;
+  const t = sync.at ? new Date(sync.at).toLocaleString('el-GR', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+  const map = {
+    local: ['var(--muted)', 'μόνο σε αυτή τη συσκευή'],
+    ok: ['var(--pos)', `κοινό · ${t}${sync.by ? ' · ' + sync.by : ''}`],
+    pending: ['var(--accent)', 'αποθήκευση…'],
+    err: ['var(--neg)', 'χωρίς σύνδεση — οι αλλαγές μένουν τοπικά'],
+    denied: ['var(--neg)', 'ο κωδικός δεν επιτρέπει αποθήκευση']
+  };
+  const [c, txt] = map[st] || map.local;
+  const el = $('subtitle');
+  if (el) el.innerHTML = `Καλαμάτα · <span style="color:${c}">●</span> ${esc(txt)}`;
+}
+async function rpc(fn, body) {
+  const r = await fetch(`${SYNC_URL}/rest/v1/rpc/${fn}`, { method: 'POST', headers: { apikey: SYNC_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+  const txt = await r.text();
+  if (!r.ok) { const e = new Error(txt); e.status = r.status; throw e; }
+  return txt ? JSON.parse(txt) : null;
+}
+async function encryptObj(o) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, sync.key, new TextEncoder().encode(JSON.stringify(o)));
+  return JSON.stringify({ i: b64e(iv), c: b64e(ct) });
+}
+async function decryptObj(s) {
+  const p = JSON.parse(s);
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64d(p.i) }, sync.key, b64d(p.c));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+async function syncInit() {
+  const pw = window.__barberPw;
+  if (!pw || !window.crypto || !crypto.subtle) { setSync('local'); return; }
+  setSync('pending');
+  try {
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']);
+    const bits = new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: new TextEncoder().encode('barber-sync-v1'), iterations: 600000, hash: 'SHA-256' }, base, 512));
+    sync.key = await crypto.subtle.importKey('raw', bits.slice(0, 32), 'AES-GCM', false, ['encrypt', 'decrypt']);
+    sync.token = [...bits.slice(32)].map(b => b.toString(16).padStart(2, '0')).join('');
+    sync.on = true;
+    await pull({ initial: true });
+    setInterval(() => { if (!document.hidden) pull({}); }, 20000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) pull({}); });
+  } catch (e) { console.error(e); setSync('err'); }
+}
+async function pull({ initial = false, force = false }) {
+  if (!sync.on || (!force && (sync.pending || sync.saving))) return;
+  try {
+    const r = await rpc('barber_load');
+    if (!r) { if (initial) await push(); else setSync('ok'); return; }
+    if (r.version === sync.version) { setSync('ok'); return; }
+    let o;
+    try { o = await decryptObj(r.data); }
+    catch (e) { // stored with an older password: replace it with this device's data
+      if (initial) { sync.version = r.version; await push(); }
+      return;
+    }
+    const editing = document.activeElement && document.activeElement.matches('#view input, #view select');
+    if (!initial && !force && editing) return; // try again on next poll, don't steal focus
+    sync.version = r.version; sync.by = r.updated_by || ''; sync.at = r.updated_at;
+    S = hydrate(o.state);
+    ls.set(LS_KEY, JSON.stringify(S));
+    if (o.scenarios) ls.set(LS_SCN, JSON.stringify(o.scenarios));
+    renderView();
+    setSync('ok');
+    if (!initial) toast(`Νέα έκδοση${sync.by ? ' από ' + sync.by : ''}`);
+  } catch (e) { console.error(e); setSync('err'); }
+}
+function schedulePush() {
+  if (!sync.on) return;
+  sync.pending = true; setSync('pending');
+  clearTimeout(sync.timer);
+  sync.timer = setTimeout(push, 1200);
+}
+async function push() {
+  sync.pending = false; sync.saving = true;
+  try {
+    const data = await encryptObj({ state: S, scenarios: scenarios() });
+    const r = await rpc('barber_save', { p_token: sync.token, p_data: data, p_version: sync.version, p_by: who() || 'Χωρίς όνομα' });
+    if (r && r.ok) { sync.version = r.version; sync.by = who() || 'Χωρίς όνομα'; sync.at = new Date().toISOString(); setSync('ok'); }
+    else if (r && r.conflict) {
+      sync.saving = false;
+      toast('Κάποιος άλλος άλλαξε κάτι ταυτόχρονα — φορτώθηκε η δική του έκδοση');
+      await pull({ force: true });
+    }
+  } catch (e) {
+    console.error(e);
+    setSync(e.status === 403 || /forbidden|42501/.test(e.message) ? 'denied' : 'err');
+  } finally {
+    sync.saving = false;
+    if (sync.pending) { clearTimeout(sync.timer); sync.timer = setTimeout(push, 1200); }
+  }
+}
+
+/* =========================================================
+   RENDER LOOP
+   ========================================================= */
+function renderTabs() {
+  $('tabs').innerHTML = Object.entries(TABS).map(([k, t]) => `<button class="${k === TAB ? 'on' : ''}" data-act="tab" data-tab="${k}">${t.label}</button>`).join('');
+}
+const LOCK_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>';
+function renderView() {
+  if (!TABS[TAB]) TAB = 'overview';
+  renderTabs();
+  $('view').innerHTML = (S.locked ? `<div class="lockbar"><span>${LOCK_SVG}Κλειδωμένο — τα νούμερα δεν αλλάζουν.</span><button class="btn sec2" data-act="lock">Ξεκλείδωμα</button></div>` : '') + TABS[TAB].render();
+  document.body.classList.toggle('locked', !!S.locked);
+  if (S.locked) $('view').querySelectorAll('[data-k]').forEach(e => { e.disabled = true; });
+  const lb = $('lockBtn');
+  lb.innerHTML = LOCK_SVG + `<span class="lbl">${S.locked ? 'Κλειδωμένο' : 'Κλείδωμα'}</span>`;
+  lb.classList.toggle('on', !!S.locked);
+  refresh();
+}
+function refresh() {
+  const R = compute(S), C = capexTotals(S, R), CF = cashflow(S, C);
+  $('strip').innerHTML = [
+    ['Καθαρό/μήνα', `<span class="${sgn(R.net)}">${eur(R.net)}</span>`],
+    ['Κεφάλαιο', eur(C.total)],
+    ['Απόσβεση', CF.payback ? `${CF.payback} μήνες` : '—'],
+    ['Πελάτες/μήνα', num(R.clients)]
+  ].map(([l, v]) => `<div class="st"><span>${l}</span><b>${v}</b></div>`).join('');
+  document.querySelectorAll('[data-show]').forEach(e => { e.textContent = getPath(S, e.dataset.show); });
+  TABS[TAB].fill(R);
+}
+
+document.addEventListener('input', e => {
+  if (e.target.id === 'whoName') { ls.set(LS_WHO, e.target.value.trim()); return; }
+  const el = e.target.closest('[data-k]');
+  if (!el || S.locked) return;
+  const t = el.dataset.t;
+  let v;
+  if (t === 'b') v = el.checked;
+  else if (t === 'n') { v = parseFloat(String(el.value).replace(',', '.')); if (!isFinite(v)) v = 0; }
+  else v = el.value;
+  setPath(S, el.dataset.k, v);
+  save();
+  document.querySelectorAll(`[data-k="${el.dataset.k}"]`).forEach(o => { if (o !== el) { if (o.type === 'checkbox') o.checked = v; else o.value = v; } });
+  if (el.hasAttribute('data-rr')) renderView(); else refresh();
+});
+
+const blankBarber = n => ({ name: `Κουρέας ${n}`, mode: 'salary', cutsPerDay: 8, ticket: 0, salary: 1100, bonusPct: 0, rent: 400, barberPct: 50 });
+const ACTIONS = {
+  lock: () => {
+    if (S.locked && !confirm('Ξεκλείδωμα; Οι αλλαγές θα φαίνονται σε όλους τους εταίρους.')) return false;
+    S.locked = !S.locked; toast(S.locked ? 'Κλειδώθηκε για όλους' : 'Ξεκλειδώθηκε');
+  },
+  tab: d => { TAB = d.tab; ls.set(LS_TAB, TAB); renderView(); window.scrollTo({ top: 0 }); },
+  addBarber: () => { S.barbers.push(blankBarber(S.barbers.length + 1)); },
+  delBarber: d => { if (confirm(`Αφαίρεση «${S.barbers[d.i].name}»;`)) S.barbers.splice(+d.i, 1); },
+  addService: () => { S.services.push({ name: 'Νέα υπηρεσία', price: 10, mix: 0 }); },
+  delService: d => { S.services.splice(+d.i, 1); },
+  addCapex: d => { S.capex.push({ cat: d.cat, name: 'Νέο έξοδο', amount: 0, on: true, note: '' }); },
+  delCapex: d => { S.capex.splice(+d.i, 1); },
+  addFixed: () => { S.fixed.push({ name: 'Νέο έξοδο', amount: 0, note: '' }); },
+  delFixed: d => { S.fixed.splice(+d.i, 1); },
+  addPartner: () => { S.partners.push({ name: 'Νέος εταίρος', capPct: 0, share: 0, role: '' }); },
+  delPartner: d => { S.partners.splice(+d.i, 1); },
+  saveScn: () => {
+    const n = ($('scnName').value || '').trim() || new Date().toLocaleString('el-GR');
+    const sc = scenarios(); sc[n] = clone(S); ls.set(LS_SCN, JSON.stringify(sc)); toast(`Αποθηκεύτηκε: ${n}`);
+  },
+  loadScn: d => { const sc = scenarios(); if (sc[d.n]) { S = hydrate(sc[d.n]); toast(`Φορτώθηκε: ${d.n}`); } },
+  delScn: d => { const sc = scenarios(); delete sc[d.n]; ls.set(LS_SCN, JSON.stringify(sc)); },
+  export: () => {
+    const blob = new Blob([JSON.stringify({ app: 'barber', exported: new Date().toISOString(), state: S, scenarios: scenarios() }, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `barber-${new Date().toISOString().slice(0, 10)}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    return false;
+  },
+  import: () => { $('importFile').click(); return false; },
+  print: () => { TAB = 'overview'; renderView(); setTimeout(() => window.print(), 100); return false; },
+  reset: () => { if (confirm('Επαναφορά όλων των νούμερων στις αρχικές εκτιμήσεις; Τα αποθηκευμένα σενάρια μένουν.')) S = clone(DEFAULTS); else return false; },
+  theme: () => {
+    const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const nx = cur === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = nx; ls.set(LS_THEME, nx); return false;
+  },
+  logout: () => { ls.del('barber.pw'); location.reload(); return false; }
+};
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const fn = ACTIONS[el.dataset.act];
+  if (!fn) return;
+  if (S.locked && /^(add|del|reset|import|loadScn)/.test(el.dataset.act)) { e.preventDefault(); toast('Κλειδωμένο — πάτα «Ξεκλείδωμα»'); return; }
+  e.preventDefault();
+  const r = fn(el.dataset);
+  if (r === false) return;
+  if (el.dataset.act !== 'tab') { save(); renderView(); }
+});
+$('importFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const o = JSON.parse(await f.text());
+    if (o.app !== 'barber' || !o.state) throw new Error('bad');
+    S = hydrate(o.state);
+    if (o.scenarios) ls.set(LS_SCN, JSON.stringify(Object.assign(scenarios(), o.scenarios)));
+    save(); renderView(); toast('Εισήχθη');
+  } catch (err) { toast('Μη έγκυρο αρχείο'); }
+  e.target.value = '';
+});
+
+(() => { const t = ls.get(LS_THEME); if (t) document.documentElement.dataset.theme = t; })();
+renderView();
+syncInit();
+let rzT; addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(refresh, 150); });
+</script>
+</body>
+</html>
