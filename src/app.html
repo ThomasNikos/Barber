@@ -254,6 +254,8 @@ body.play header.top::before{content:"";display:block;height:4px;background:var(
 .seg{display:inline-flex;background:var(--surface2);border-radius:9px;padding:3px;gap:2px}
 .seg button{border:0;background:none;padding:5px 10px;border-radius:7px;font-size:13px;color:var(--muted);font-weight:500}
 .seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:600}
+.hball{border-top:1px solid var(--line);padding-top:10px;margin-top:14px}
+.hl{flex:none;width:118px;font-size:13px;color:var(--muted)}
 @media print{header.top nav,.hbtns,.x,.btn{display:none!important} header.top{position:static}}
 </style>
 </head>
@@ -1215,14 +1217,22 @@ function fBarbers(R) {
     ${b.otCuts > 0 ? `<div style="grid-column:1/-1"><span>Υπερωρίες: ${num1(b.otHours)} ώρες → +${num(b.otCuts)} πελάτες${b.otPay ? ` · κόστος ${eur(b.otPay * (1 + S.settings.employerRate / 100))} με εισφορές` : ''}</span><b class="${sgn(b.otGain)}">${b.otGain >= 0 ? 'μένουν' : 'χάνονται'} ${eur(Math.abs(b.otGain))}/μήνα</b> <span>προ φόρου</span></div>` : ''}
     <div style="grid-column:1/-1"><span>${esc(b.barberNote)}</span></div>`));
   const pf = periodF(), pl = PERIODS[PERIOD][1];
-  const e2 = v => PERIOD === 'day' ? eur2(v * pf) : eur(v * pf), n2 = v => PERIOD === 'day' || PERIOD === 'week' ? num1(v * pf) : num(v * pf);
-  const mx = Math.max(1, ...R.barbers.flatMap(b => [Math.abs(b.contrib), Math.max(0, b.barberEarn)]));
-  setHTML('bb-chart', legend([['var(--c1)', `Μένει στο μαγαζί ${pl}`, 'sq'], ['var(--c2)', `Παίρνει ο κουρέας ${pl}`, 'sq']]) + R.barbers.map(b => {
+  const e2 = v => PERIOD === 'day' ? eur2(v * pf) : eur(v * pf), n2 = v => PERIOD === 'day' ? num1(v * pf) : num(v * pf);
+  const mx = Math.max(1, ...R.barbers.flatMap(b => [Math.abs(b.contrib), Math.max(0, b.barberEarn), b.net]));
+  setHTML('bb-chart', legend([['var(--c1)', `Μένει στο μαγαζί ${pl}`, 'sq'], ['var(--c2)', `Παίρνει ο κουρέας ${pl}`, 'sq'], ['var(--c8)', `Σύνολο που φέρνει (χωρίς ΦΠΑ)`, 'sq']]) + R.barbers.map(b => {
     const tip = attr(tipHTML(`${esc(b.name)} · ${MODES[b.mode].label} · ${pl}`, [['', 'Πελάτες', n2(b.cuts)], ['', 'Τζίρος με ΦΠΑ', e2(b.gross)], ['var(--c1)', 'Μένει στο μαγαζί', e2(b.contrib)], ['var(--c2)', 'Παίρνει ο κουρέας', b.mode === 'partner' && !b.partnerFee ? '—' : e2(b.barberEarn)]]));
     return `<div class="hb" data-tip="${tip}"><div class="nm"><span>${esc(b.name)} <span class="mode">${MODES[b.mode].label}</span></span><span class="small">${n2(b.cuts)} πελάτες ${pl} · τζίρος ${e2(b.gross)}</span></div>
       <div class="tr2"><div class="bar" style="width:${Math.abs(b.contrib) / mx * 75}%;background:${b.contrib >= 0 ? 'var(--c1)' : 'var(--neg)'}"></div><span class="v">${e2(b.contrib)}</span></div>
-      <div class="tr2"><div class="bar" style="width:${Math.max(0, b.barberEarn) / mx * 75}%;background:var(--c2)"></div><span class="v">${b.mode === 'partner' && !b.partnerFee ? 'εταίρος' : e2(b.barberEarn)}</span></div></div>`;
-  }).join(''));
+      <div class="tr2"><div class="bar" style="width:${Math.max(0, b.barberEarn) / mx * 75}%;background:var(--c2)"></div><span class="v">${b.mode === 'partner' && !b.partnerFee ? 'εταίρος' : e2(b.barberEarn)}</span></div>
+      <div class="tr2"><div class="bar" style="width:${b.net / mx * 75}%;background:var(--c8)"></div><span class="v">σύνολο ${e2(b.net)}</span></div></div>`;
+  }).join('') + (() => {
+    const T = R.barbers.reduce((a, b) => ({ c: a.c + b.contrib, e: a.e + Math.max(0, b.barberEarn), n: a.n + b.net, k: a.k + b.cuts }), { c: 0, e: 0, n: 0, k: 0 });
+    const m2 = Math.max(1, Math.abs(T.c), T.e, T.n);
+    return `<div class="hb hball"><div class="nm"><span><b>Όλοι μαζί</b></span><span class="small">${n2(T.k)} πελάτες ${pl}</span></div>
+      <div class="tr2"><div class="bar" style="width:${Math.abs(T.c) / m2 * 75}%;background:${T.c >= 0 ? 'var(--c1)' : 'var(--neg)'}"></div><span class="v">${e2(T.c)}</span></div>
+      <div class="tr2"><div class="bar" style="width:${T.e / m2 * 75}%;background:var(--c2)"></div><span class="v">${e2(T.e)}</span></div>
+      <div class="tr2"><div class="bar" style="width:${T.n / m2 * 75}%;background:var(--c8)"></div><span class="v">σύνολο ${e2(T.n)}</span></div></div>`;
+  })());
   const t = R.barbers.reduce((a, b) => ({ cuts: a.cuts + b.cuts, gross: a.gross + b.gross, cost: a.cost + b.staff + b.consum + b.card + (b.partnerFee || 0), contrib: a.contrib + b.contrib }), { cuts: 0, gross: 0, cost: 0, contrib: 0 });
   setHTML('bb-sum', `<table class="tbl"><tr><th>Κουρέας</th><th>Μοντέλο</th><th class="num">Πελάτες</th><th class="num">Τζίρος με ΦΠΑ</th><th class="num">Κόστος για μαγαζί</th><th class="num">Μένει στο μαγαζί</th></tr>
     ${R.barbers.map(b => `<tr><td>${esc(b.name)}</td><td>${MODES[b.mode].label}</td><td class="num">${n2(b.cuts)}</td><td class="num">${e2(b.gross)}</td><td class="num">${e2(b.staff + b.consum + b.card + (b.partnerFee || 0))}</td><td class="num ${sgn(b.contrib)}">${e2(b.contrib)}</td></tr>`).join('')}
@@ -1237,6 +1247,7 @@ function rCoffee() {
   return `
   <h2>Μπαρίστα, καφές & προϊόντα</h2>
   <p class="lead">Ο καφές μπορεί να πουλιέται, να κερνιέται στους πελάτες του κουρείου, ή και τα δύο. Η πώληση καφέ θέλει επιπλέον γνωστοποίηση ως κατάστημα υγειονομικού ενδιαφέροντος· ο κερασμένος είναι απλούστερος.</p>
+  <div class="card" style="margin-bottom:14px"><div class="cathd" style="flex-wrap:wrap;gap:8px"><h3 style="margin:0">Τι φέρνει ο καφές</h3>${periodSeg()}</div><div id="cf-chart" style="margin-top:10px"></div></div>
   <div class="grid g2">
     <div class="card">
       <h3>Μπαρίστα</h3>
@@ -1261,7 +1272,24 @@ function rCoffee() {
     </div>
   </div>`;
 }
+function hbars(rows, mx) {
+  return rows.map(([label, v, color, txt]) => `<div class="tr2" title="${attr(label)}"><span class="hl">${label}</span><div class="bar" style="width:${Math.min(100, Math.abs(v) / (mx || 1) * 62)}%;background:${color}"></div><span class="v">${txt}</span></div>`).join('');
+}
 function fCoffee(R) {
+  {
+    const pf = periodF(), pl = PERIODS[PERIOD][1];
+    const e2 = v => PERIOD === 'day' ? eur2(v * pf) : eur(v * pf), n2 = v => PERIOD === 'day' ? num1(v * pf) : num(v * pf);
+    const res = R.rev.coffee - R.cost.coffee - R.cost.barista;
+    const rows = [
+      ['Έσοδα πωλήσεων', R.rev.coffee, 'var(--c1)', e2(R.rev.coffee)],
+      ['Πρώτη ύλη', R.cost.coffee, 'var(--c2)', '−' + e2(R.cost.coffee)],
+      ['Μπαρίστα', R.cost.barista, 'var(--c7)', '−' + e2(R.cost.barista)],
+      ['Αποτέλεσμα', res, res >= 0 ? 'var(--pos)' : 'var(--neg)', `<b class="${sgn(res)}">${e2(res)}</b>`]
+    ];
+    const mx = Math.max(1, ...rows.map(r => Math.abs(r[1])));
+    setHTML('cf-chart', `<div class="hb"><div class="nm"><span>Καφέδες ${pl}</span><span class="small">${n2(R.paidCups || 0)} πωλούνται · ${n2(R.freeCups || 0)} κερασμένοι · σύνολο ${n2(R.cups)}</span></div>${hbars(rows, mx)}</div>` +
+      (R.clients ? `<p class="small">Ανά πελάτη κουρείου ο καφές ${res >= 0 ? 'φέρνει' : 'κοστίζει'} ${eur2(Math.abs(res) / R.clients)}.${PERIOD === 'day' ? ` Ανά εργάσιμη ημέρα (${num(S.settings.daysPerMonth)} τον μήνα).` : ''}</p>` : ''));
+  }
   const b = S.barista;
   setHTML('cf-barista', b.enabled ? `<div class="note">Κόστος για το μαγαζί: <b>${eur(R.cost.barista)}/μήνα</b> (μισθός × ${S.settings.salaryMonths}/12 + εισφορές ${num1(S.settings.employerRate)}%).</div>` : '');
   let h = '';
