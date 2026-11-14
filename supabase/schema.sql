@@ -56,3 +56,11 @@ revoke all on function public.barber_load() from public;
 revoke all on function public.barber_save(text, text, integer, text) from public;
 grant execute on function public.barber_load() to anon, authenticated;
 grant execute on function public.barber_save(text, text, integer, text) to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- v2: per-user write tokens + history (replaces barber_secret and the old
+-- barber_save(text,text,integer,text) whose 4th arg was the user name).
+-- See the migration "barber_users_and_log" applied to the project.
+-- Tables: barber_users(name, token_hash), barber_log(id, at, user_name, kind, summary, snapshot)
+-- Functions: barber_save(token, data, version, log), barber_login(token),
+--            barber_log_list(token, limit), barber_log_get(token, id), barber_load()

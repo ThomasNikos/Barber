@@ -1,29 +1,76 @@
-// Encrypts src/app.html with a password and writes a self-unlocking docs/index.html
-// for GitHub Pages. The published page contains only ciphertext (AES-256-GCM,
-// key derived with PBKDF2-SHA256), so the numbers are not readable without the password.
+// Builds docs/index.html: a login page that holds the app encrypted, unlockable by
+// any user listed in .secrets.json (gitignored), each with their own password.
 //
-//   BARBER_PASSWORD='...' node build.mjs
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { webcrypto as crypto } from 'node:crypto';
-
-const pw = process.env.BARBER_PASSWORD;
-if (!pw) {
-  console.error('Set BARBER_PASSWORD, e.g.  BARBER_PASSWORD="..." node build.mjs');
-  process.exit(1);
-}
+//   node build.mjs                 build with the users in .secrets.json
+//   node build.mjs add "Πάνος"     add a user (random password), then build
+//   node build.mjs reset "Θωμάς"   give a user a new random password, then build
+//
+// How it works
+// - The app (src/app.html) is encrypted once with a random content key (AES-256-GCM).
+// - For every user, that content key + the user's name + their personal write token are
+//   encrypted with a key derived from their password (PBKDF2-SHA256, 600k iterations).
+//   The login page tries the typed password against each user's slot.
+// - The shared data key (dataKey) is baked into the encrypted app; the browser uses it to
+//   encrypt the state stored in Supabase. The server only knows sha256(token) per user,
+//   so it can tell who saved what (logs) without being able to read the data.
+// After adding a user or resetting a password, run the SQL that this script prints.
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { webcrypto as crypto, randomBytes, randomInt, createHash } from 'node:crypto';
 
 const ITER = 600000;
 const enc = new TextEncoder();
-const html = readFileSync(new URL('./src/app.html', import.meta.url), 'utf8');
-const salt = crypto.getRandomValues(new Uint8Array(16));
-const iv = crypto.getRandomValues(new Uint8Array(12));
-const base = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']);
-const key = await crypto.subtle.deriveKey(
-  { name: 'PBKDF2', salt, iterations: ITER, hash: 'SHA-256' },
-  base, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
-const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(html)));
+const root = new URL('./', import.meta.url);
+const secretsPath = new URL('.secrets.json', root);
 const b64 = u => Buffer.from(u).toString('base64');
-const payload = JSON.stringify({ s: b64(salt), i: b64(iv), c: b64(ct), n: ITER });
+const genPassword = () => {
+  const w = 'abcdefghjkmnpqrstuvwxyz23456789';
+  let s = '';
+  for (let i = 0; i < 12; i++) s += w[randomInt(w.length)];
+  return `barber-${s.slice(0, 4)}-${s.slice(4, 8)}-${s.slice(8)}`;
+};
+
+if (!existsSync(secretsPath)) {
+  writeFileSync(secretsPath, JSON.stringify({ dataKey: randomBytes(32).toString('hex'), users: [] }, null, 2), { mode: 0o600 });
+}
+const sec = JSON.parse(readFileSync(secretsPath, 'utf8'));
+const [cmd, who] = process.argv.slice(2);
+const changed = [];
+if (cmd === 'add') {
+  if (!who) throw new Error('usage: node build.mjs add "Name"');
+  if (sec.users.some(u => u.name === who)) throw new Error(`user ${who} exists`);
+  sec.users.push({ name: who, password: genPassword(), token: randomBytes(32).toString('hex') });
+  changed.push(who);
+} else if (cmd === 'reset') {
+  const u = sec.users.find(x => x.name === who);
+  if (!u) throw new Error(`no user ${who}`);
+  u.password = genPassword(); u.token = randomBytes(32).toString('hex');
+  changed.push(who);
+} else if (cmd) throw new Error(`unknown command ${cmd}`);
+if (!sec.users.length) throw new Error('no users: run  node build.mjs add "Name"');
+writeFileSync(secretsPath, JSON.stringify(sec, null, 2), { mode: 0o600 });
+
+// 1. encrypt the app with a random content key
+let html = readFileSync(new URL('src/app.html', root), 'utf8');
+if (!html.includes('__BARBER_DATA_KEY__')) throw new Error('placeholder __BARBER_DATA_KEY__ missing in src/app.html');
+html = html.replace('__BARBER_DATA_KEY__', sec.dataKey);
+const cekRaw = crypto.getRandomValues(new Uint8Array(32));
+const cek = await crypto.subtle.importKey('raw', cekRaw, 'AES-GCM', false, ['encrypt']);
+const appIv = crypto.getRandomValues(new Uint8Array(12));
+const appCt = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: appIv }, cek, enc.encode(html)));
+
+// 2. one slot per user
+const salt = crypto.getRandomValues(new Uint8Array(16));
+const slots = [];
+for (const u of sec.users) {
+  const base = await crypto.subtle.importKey('raw', enc.encode(u.password), 'PBKDF2', false, ['deriveKey']);
+  const kek = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: ITER, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const body = enc.encode(JSON.stringify({ k: b64(cekRaw), u: u.name, t: u.token }));
+  slots.push({ i: b64(iv), c: b64(new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, kek, body))) });
+}
+// shuffle so slot order does not reveal the user order
+for (let i = slots.length - 1; i > 0; i--) { const j = randomInt(i + 1); [slots[i], slots[j]] = [slots[j], slots[i]]; }
+const payload = JSON.stringify({ n: ITER, s: b64(salt), a: { i: b64(appIv), c: b64(appCt) }, slots });
 
 const page = `<!doctype html>
 <html lang="el">
@@ -31,14 +78,18 @@ const page = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#1c1915">
 <title>Barber</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 :root{--bg:#f5f1ea;--surface:#fffdf9;--ink:#1c1915;--muted:#6e665a;--line:#e0d8ca;--accent:#9c6a22;--neg:#b0402d;color-scheme:light}
 @media (prefers-color-scheme:dark){:root{--bg:#13110e;--surface:#1c1915;--ink:#f0e9de;--muted:#a59b8b;--line:#332e26;--accent:#d8a650;--neg:#e57a66;color-scheme:dark}}
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px}
 form{width:100%;max-width:340px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px 24px}
-.pole{width:12px;height:36px;border-radius:6px;margin-bottom:14px;background:repeating-linear-gradient(-45deg,#b0402d 0 6px,#fff 6px 12px,#3f6e8c 12px 18px,#fff 18px 24px);border:1px solid var(--line)}
+.logo{width:44px;height:44px;margin-bottom:14px;display:block}
 h1{margin:0;font-size:20px;letter-spacing:.22em;text-transform:uppercase}
 p{margin:4px 0 20px;color:var(--muted);font-size:14px}
 input[type=password]{width:100%;font:inherit;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:inherit;outline:none}
@@ -52,10 +103,10 @@ button:disabled{opacity:.6}
 </head>
 <body>
 <form id="f" autocomplete="on">
-  <div class="pole"></div>
+  <img class="logo" src="favicon.svg" alt="">
   <h1>Barber</h1>
   <p>Πλάνο Καλαμάτας · μόνο για εταίρους</p>
-  <input type="password" id="pw" placeholder="Κωδικός" autocomplete="current-password" autofocus required>
+  <input type="password" id="pw" placeholder="Ο κωδικός σου" autocomplete="current-password" autofocus required>
   <label><input type="checkbox" id="rm"> Να με θυμάσαι σε αυτή τη συσκευή</label>
   <button id="go">Είσοδος</button>
   <div class="err" id="err"></div>
@@ -64,20 +115,28 @@ button:disabled{opacity:.6}
 (()=>{
 const P=${payload};
 const d=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const te=new TextEncoder(),td=new TextDecoder();
 async function unlock(pw){
-  const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
-  const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:d(P.s),iterations:P.n,hash:'SHA-256'},k,{name:'AES-GCM',length:256},false,['decrypt']);
-  return new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:d(P.i)},key,d(P.c)));
+  const base=await crypto.subtle.importKey('raw',te.encode(pw),'PBKDF2',false,['deriveKey']);
+  const kek=await crypto.subtle.deriveKey({name:'PBKDF2',salt:d(P.s),iterations:P.n,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['decrypt']);
+  for(const sl of P.slots){
+    let o;
+    try{o=JSON.parse(td.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:d(sl.i)},kek,d(sl.c))));}catch(e){continue;}
+    const cek=await crypto.subtle.importKey('raw',d(o.k),'AES-GCM',false,['decrypt']);
+    const html=td.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:d(P.a.i)},cek,d(P.a.c)));
+    return {html,user:o.u,token:o.t};
+  }
+  throw new Error('bad password');
 }
-function show(html){document.open();document.write(html);document.close();}
+function show(r){window.__barber={user:r.user,token:r.token};document.open();document.write(r.html);document.close();}
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
 const saved=ls.get('barber.pw');
-if(saved){unlock(saved).then(h=>{window.__barberPw=saved;show(h);}).catch(()=>ls.del('barber.pw'));}
+if(saved){unlock(saved).then(show).catch(()=>ls.del('barber.pw'));}
 document.getElementById('f').addEventListener('submit',async e=>{
   e.preventDefault();
   const b=document.getElementById('go'),err=document.getElementById('err'),pw=document.getElementById('pw').value;
   b.disabled=true;b.textContent='Ξεκλείδωμα…';err.textContent='';
-  try{const h=await unlock(pw);window.__barberPw=pw;if(document.getElementById('rm').checked)ls.set('barber.pw',pw);show(h);}
+  try{const r=await unlock(pw);if(document.getElementById('rm').checked)ls.set('barber.pw',pw);show(r);}
   catch(x){err.textContent='Λάθος κωδικός';b.disabled=false;b.textContent='Είσοδος';}
 });
 })();
@@ -86,14 +145,12 @@ document.getElementById('f').addEventListener('submit',async e=>{
 </html>
 `;
 
-mkdirSync(new URL('./docs/', import.meta.url), { recursive: true });
-writeFileSync(new URL('./docs/index.html', import.meta.url), page);
-writeFileSync(new URL('./docs/.nojekyll', import.meta.url), '');
-// Write token for the shared Supabase state (must match the browser derivation in src/app.html).
-const syncBase = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveBits']);
-const syncBits = new Uint8Array(await crypto.subtle.deriveBits(
-  { name: 'PBKDF2', salt: enc.encode('barber-sync-v1'), iterations: 600000, hash: 'SHA-256' }, syncBase, 512));
-const token = Buffer.from(syncBits.slice(32)).toString('hex');
-const tokenHash = Buffer.from(await crypto.subtle.digest('SHA-256', enc.encode(token))).toString('hex');
-console.log(`\nRun once in Supabase (SQL editor) after changing the password:\n  insert into public.barber_secret (id, token_hash) values ('main', '${tokenHash}')\n  on conflict (id) do update set token_hash = excluded.token_hash;\n`);
-console.log(`docs/index.html written (${(page.length / 1024).toFixed(0)} KB, PBKDF2 ${ITER} iterations)`);
+mkdirSync(new URL('docs/', root), { recursive: true });
+writeFileSync(new URL('docs/index.html', root), page);
+writeFileSync(new URL('docs/.nojekyll', root), '');
+
+const sha = t => createHash('sha256').update(t, 'utf8').digest('hex');
+const sql = sec.users.map(u => `('${u.name.replace(/'/g, "''")}', '${sha(u.token)}')`).join(',\n  ');
+console.log(`docs/index.html written (${(page.length / 1024).toFixed(0)} KB, ${sec.users.length} users: ${sec.users.map(u => u.name).join(', ')})`);
+console.log(`\nSync users in Supabase (SQL editor):\n  delete from public.barber_users where name not in (${sec.users.map(u => `'${u.name.replace(/'/g, "''")}'`).join(', ')});\n  insert into public.barber_users (name, token_hash) values\n  ${sql}\n  on conflict (name) do update set token_hash = excluded.token_hash;\n`);
+if (changed.length) console.log(`New password for ${changed.join(', ')}: see .secrets.json`);

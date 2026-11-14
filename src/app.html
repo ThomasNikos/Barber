@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Barber · Καλαμάτα</title>
+<meta name="theme-color" content="#1c1915">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3Cpattern id='p' width='14' height='14' patternUnits='userSpaceOnUse' patternTransform='rotate(-38)'%3E%3Crect width='14' height='14' fill='%23fff'/%3E%3Crect width='4.5' height='14' fill='%23c0392b'/%3E%3Crect x='7' width='4.5' height='14' fill='%232a5d8a'/%3E%3C/pattern%3E%3C/defs%3E%3Crect x='2' y='2' width='60' height='60' rx='14' fill='%231c1915'/%3E%3Crect x='23' y='14' width='18' height='36' rx='4' fill='url(%23p)'/%3E%3Crect x='20' y='8' width='24' height='8' rx='3.5' fill='%23d8a650'/%3E%3Crect x='20' y='48' width='24' height='8' rx='3.5' fill='%23d8a650'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Commissioner:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -11,21 +13,21 @@
 :root{
   --bg:#f5f1ea; --surface:#fffdf9; --surface2:#efe9df; --ink:#1c1915; --muted:#6e665a; --line:#e0d8ca;
   --accent:#9c6a22; --accent-soft:#f1e3cb; --pos:#2c7a4b; --pos-soft:#dcefe2; --neg:#b0402d; --neg-soft:#f7dfd9;
-  --c1:#9c6a22; --c2:#3f6e8c; --c3:#7a5a8f; --c4:#4f8a6b; --c5:#b0402d; --c6:#8a8172;
+  --c1:#2a78d6; --c2:#eb6834; --c3:#1baf7a; --c4:#eda100; --c5:#e87ba4; --c6:#008300; --c7:#6250d6; --c8:#8a8172;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --bg:#13110e; --surface:#1c1915; --surface2:#26221c; --ink:#f0e9de; --muted:#a59b8b; --line:#332e26;
     --accent:#d8a650; --accent-soft:#3a2e1b; --pos:#62c08a; --pos-soft:#1c3326; --neg:#e57a66; --neg-soft:#3d221d;
-    --c1:#d8a650; --c2:#6fa3c4; --c3:#a88bc0; --c4:#72b892; --c5:#e57a66; --c6:#8f8778;
+    --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c6:#008300; --c7:#9085e9; --c8:#8f8778;
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#13110e; --surface:#1c1915; --surface2:#26221c; --ink:#f0e9de; --muted:#a59b8b; --line:#332e26;
   --accent:#d8a650; --accent-soft:#3a2e1b; --pos:#62c08a; --pos-soft:#1c3326; --neg:#e57a66; --neg-soft:#3d221d;
-  --c1:#d8a650; --c2:#6fa3c4; --c3:#a88bc0; --c4:#72b892; --c5:#e57a66; --c6:#8f8778;
+  --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c6:#008300; --c7:#9085e9; --c8:#8f8778;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -39,7 +41,7 @@ a{color:var(--accent)}
 header.top{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .brand{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0 6px}
 .logo{display:flex;align-items:center;gap:10px}
-.pole{width:10px;height:28px;border-radius:5px;background:repeating-linear-gradient(-45deg,var(--neg) 0 5px,var(--surface) 5px 10px,var(--c2) 10px 15px,var(--surface) 15px 20px);border:1px solid var(--line)}
+.pole{width:10px;height:28px;border-radius:5px;background:repeating-linear-gradient(-45deg,#c0392b 0 5px,#fff 5px 10px,#2a5d8a 10px 15px,#fff 15px 20px);border:1px solid var(--line)}
 .logo h1{margin:0;font-size:17px;font-weight:800;letter-spacing:.22em;text-transform:uppercase}
 .logo small{display:block;font-size:11px;color:var(--muted);letter-spacing:.04em;margin-top:-2px}
 .hbtns{display:flex;gap:6px}
@@ -173,6 +175,36 @@ body.locked [data-act^="add"],body.locked [data-act^="del"],body.locked [data-ac
 body.locked #view input:disabled,body.locked #view select:disabled{opacity:.75;cursor:not-allowed}
 body.locked input.txt:hover{border-color:transparent}
 .lockbar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:8px 12px;margin-bottom:14px;font-size:14px}
+.tip{position:fixed;z-index:60;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12.5px;box-shadow:0 6px 24px rgba(0,0,0,.18);opacity:0;transition:opacity .1s;max-width:260px}
+.tip.on{opacity:1}
+.tip b{display:block;margin-bottom:4px;font-size:13px}
+.tip .tr{display:flex;align-items:center;gap:6px;justify-content:space-between}
+.tip .tr span:first-child{display:flex;align-items:center;gap:6px;color:var(--muted)}
+.tip .tr span:last-child{font-weight:600}
+svg.chart{display:block;touch-action:pan-y;overflow:visible}
+.lg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted);margin:2px 0 8px}
+.lg span{display:inline-flex;align-items:center;gap:6px}
+.lg i{width:14px;height:3px;border-radius:2px;display:inline-block}
+.lg i.sq{width:10px;height:10px;border-radius:3px}
+.lg i.dash{background:none!important;border-top:2px dashed currentColor;height:0}
+.donutwrap{display:flex;flex-wrap:wrap;align-items:center;gap:14px}
+.donutwrap svg{flex:none}
+.donutwrap .legend{flex:1;min-width:200px}
+.hb{margin:10px 0}
+.hb .nm{display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:4px}
+.hb .tr2{display:flex;align-items:center;gap:8px;margin:3px 0}
+.hb .bar{height:10px;border-radius:0 4px 4px 0;min-width:2px}
+.hb .v{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.yrs td,.yrs th{text-align:right}
+.yrs td:first-child,.yrs th:first-child{text-align:left}
+.sub2{font-size:13px;font-weight:600;margin:16px 0 4px}
+.hrow{padding:10px 0;border-bottom:1px dashed var(--line)}
+.hrow:last-child{border-bottom:0}
+.hrow.login{padding:6px 0;opacity:.75}
+.hmeta{display:flex;justify-content:space-between;gap:10px}
+.hch{margin:4px 0 0;padding-left:18px;font-size:13.5px}
+.hch li{margin:2px 0}
+.hbtn{margin-top:8px;font-size:13px;padding:6px 10px}
 @media print{header.top nav,.hbtns,.x,.btn{display:none!important} header.top{position:static}}
 </style>
 </head>
@@ -183,7 +215,7 @@ body.locked input.txt:hover{border-color:transparent}
       <div class="logo"><div class="pole"></div><div><h1>Barber</h1><small id="subtitle">Καλαμάτα · επιχειρηματικό πλάνο</small></div></div>
       <div class="hbtns">
         <button class="ghost" data-act="lock" id="lockBtn" title="Κλείδωμα αλλαγών"></button>
-        <button class="ghost" data-act="theme" title="Θέμα">◐</button>
+        <button class="ghost" data-act="theme" title="Φωτεινό / σκοτεινό θέμα"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="margin:0"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5v11A5.5 5.5 0 0 0 8 2.5z" fill="currentColor"/></svg></button>
         <button class="ghost" data-act="logout">Έξοδος</button>
       </div>
     </div>
@@ -219,8 +251,12 @@ const DEFAULTS = {
     rampStart: 45,         // % πελατείας τον 1ο μήνα
     reserveMonths: 2,      // κεφάλαιο κίνησης σε μήνες παγίων + μισθοδοσίας
     contingencyPct: 10,    // απρόβλεπτα επί των εξόδων έναρξης
-    horizon: 36
+    horizon: 60,
+    priceGrowth: 3,        // αύξηση τιμών / έτος
+    wageGrowth: 4.5,       // αύξηση μισθών / έτος (κατώτατος → ~1.000 € ως 2028)
+    costGrowth: 3          // πληθωρισμός παγίων / έτος
   },
+  finance: { loan: 0, rate: 6.5, years: 5, grant: 0, grantMonth: 12 },
   services: [
     { name: 'Κούρεμα', price: 15, mix: 55 },
     { name: 'Κούρεμα + γένια', price: 22, mix: 28 },
@@ -308,7 +344,8 @@ function hydrate(o) {
   return Object.assign(d, o, {
     settings: Object.assign(d.settings, o.settings || {}),
     barista: Object.assign(d.barista, o.barista || {}),
-    retail: Object.assign(d.retail, o.retail || {})
+    retail: Object.assign(d.retail, o.retail || {}),
+    finance: Object.assign(d.finance, o.finance || {})
   });
 }
 let S = (() => { try { return hydrate(JSON.parse(ls.get(LS_KEY))); } catch (e) { return clone(DEFAULTS); } })();
@@ -344,7 +381,9 @@ function avgTicket(s) {
 
 /* opt: k = πολλαπλασιαστής πελατείας (ramp-up), cpd = override κουρέματα/ημέρα, ticket = override μέση απόδειξη, mode = override μοντέλο */
 function compute(s, opt = {}) {
-  const st = s.settings, k = opt.k ?? 1;
+  const st = s.settings, k = opt.k ?? 1, yr = opt.y || 0;
+  const gP = Math.pow(1 + (+st.priceGrowth || 0) / 100, yr), gW = Math.pow(1 + (+st.wageGrowth || 0) / 100, yr), gC = Math.pow(1 + (+st.costGrowth || 0) / 100, yr);
+  const cpc = st.consumablePerCut * gC;
   const vS = 1 + st.vatServices / 100, vC = 1 + st.vatCoffee / 100, vP = 1 + st.vatProducts / 100;
   const er = 1 + st.employerRate / 100, sm = st.salaryMonths / 12;
   const card = (gross) => gross * st.cardShare / 100 * st.cardFee / 100;
@@ -357,22 +396,22 @@ function compute(s, opt = {}) {
     const mode = (opt.mode && b.mode !== 'partner') ? opt.mode : b.mode;
     const cpd = opt.cpd ?? (+b.cutsPerDay || 0);
     const cuts = cpd * k * st.daysPerMonth;
-    const ticket = opt.ticket ?? ((+b.ticket > 0) ? +b.ticket : at);
+    const ticket = opt.ticket ?? (((+b.ticket > 0) ? +b.ticket : at) * gP);
     const gross = cuts * ticket, net = gross / vS;
     const r = { name: b.name, mode, cuts, ticket, gross, net, shopRev: 0, staff: 0, consum: 0, card: 0, barberEarn: 0, barberNote: '' };
     clients += cuts;
     if (mode === 'rent') {
-      r.shopRev = +b.rent || 0;
+      r.shopRev = (+b.rent || 0) * gP;
       rev.chairRent += r.shopRev;
-      r.barberEarn = net - r.shopRev - cuts * st.consumablePerCut;
+      r.barberEarn = net - r.shopRev - cuts * cpc;
       r.barberNote = 'πριν από δικό του ΕΦΚΑ & φόρο';
     } else {
       r.shopRev = net; rev.services += net;
-      r.consum = cuts * st.consumablePerCut;
+      r.consum = cuts * cpc;
       r.card = card(gross);
       shopCuts += cuts; shopGross += gross; shopNet += net;
       if (mode === 'salary') {
-        const base = (+b.salary || 0) * sm;
+        const base = (+b.salary || 0) * gW * sm;
         const bonus = net * (+b.bonusPct || 0) / 100;
         r.staff = (base + bonus) * er;
         payrollBase += base * er;
@@ -394,25 +433,25 @@ function compute(s, opt = {}) {
   // μπαρίστα & καφές
   const ba = s.barista;
   let cups = 0;
-  if (ba.enabled) { cost.barista = (+ba.salary || 0) * sm * er * (+ba.fte || 0) / 100; payrollBase += cost.barista; }
+  if (ba.enabled) { cost.barista = (+ba.salary || 0) * gW * sm * er * (+ba.fte || 0) / 100; payrollBase += cost.barista; }
   if (ba.coffeeMode === 'free') {
     cups = clients * (+ba.takeRate || 0) / 100;
-    cost.coffee = cups * (+ba.costPerCup || 0);
+    cost.coffee = cups * (+ba.costPerCup || 0) * gC;
   } else if (ba.coffeeMode === 'paid') {
     cups = (+ba.cupsPerDay || 0) * k * st.daysPerMonth;
-    const g = cups * (+ba.price || 0);
+    const g = cups * (+ba.price || 0) * gP;
     rev.coffee = g / vC;
-    cost.coffee = cups * (+ba.costPerCup || 0);
+    cost.coffee = cups * (+ba.costPerCup || 0) * gC;
     cost.card += card(g);
   }
 
   // λιανική
-  const rg = (+s.retail.sales || 0) * k;
+  const rg = (+s.retail.sales || 0) * k * gP;
   rev.retail = rg / vP;
   cost.retail = rev.retail * (1 - (+s.retail.margin || 0) / 100);
   cost.card += card(rg);
 
-  cost.fixed = s.fixed.reduce((a, x) => a + (+x.amount || 0), 0);
+  cost.fixed = s.fixed.reduce((a, x) => a + (+x.amount || 0), 0) * gC;
 
   const revenue = rev.services + rev.chairRent + rev.coffee + rev.retail;
   const costs = Object.values(cost).reduce((a, b) => a + b, 0);
@@ -420,7 +459,7 @@ function compute(s, opt = {}) {
   const tax = Math.max(0, preTax) * st.corpTax / 100;
   const net = preTax - tax;
   const dist = net > 0 ? net * (1 - st.dividendTax / 100) : net;
-  const grossReceipts = shopGross + (ba.coffeeMode === 'paid' ? cups * (+ba.price || 0) : 0) + rg;
+  const grossReceipts = shopGross + (ba.coffeeMode === 'paid' ? cups * (+ba.price || 0) * gP : 0) + rg;
   return { barbers, rev, cost, revenue, costs, preTax, tax, net, dist, clients, shopCuts, shopGross, shopNet, cups, payrollBase, grossReceipts, avgTicket: at };
 }
 
@@ -439,16 +478,36 @@ function rampK(s, m) {
   return Math.min(1, a + (1 - a) * (m - 1) / r);
 }
 
+function loanPlan(F) {
+  const L = Math.max(0, +F.loan || 0), N = Math.max(1, Math.round((+F.years || 0) * 12)), r = (+F.rate || 0) / 1200;
+  const pay = L <= 0 ? 0 : r > 0 ? L * r / (1 - Math.pow(1 + r, -N)) : L / N;
+  return { L, N, r, pay };
+}
+/* Μήνας-μήνας: σταδιακή πελατεία, ετήσιες αυξήσεις, τόκοι (εκπίπτουν) και δόσεις δανείου, επιδότηση. */
 function cashflow(s, C) {
-  const H = s.settings.horizon, cum = [], monthly = [];
-  let c = -C.spend, payback = null, min = c;
+  const st = s.settings, H = Math.max(12, st.horizon | 0), F = s.finance || {}, lp = loanPlan(F);
+  const cum = [], monthly = [], years = [];
+  const start = -Math.max(0, C.spend - lp.L);
+  let c = start, bal = lp.L, payback = null, min = c;
   for (let m = 1; m <= H; m++) {
-    const R = compute(s, { k: rampK(s, m) });
-    monthly.push(R.net); c += R.net; cum.push(c);
+    const y = Math.floor((m - 1) / 12);
+    const R = compute(s, { k: rampK(s, m), y });
+    const interest = bal * lp.r;
+    const principal = (m <= lp.N && bal > 0) ? Math.min(bal, lp.pay - interest) : 0;
+    bal -= principal;
+    const preTax = R.preTax - interest;
+    const tax = Math.max(0, preTax) * st.corpTax / 100;
+    const net = preTax - tax;
+    const grant = (+F.grant > 0 && m === (+F.grantMonth || 1)) ? +F.grant : 0;
+    const cash = net - principal + grant;
+    c += cash; cum.push(c); monthly.push(cash);
     if (c < min) min = c;
-    if (payback === null && c >= 0) payback = m;
+    if (payback === null && c >= 0 && start < 0) payback = m;
+    const Y = years[y] = years[y] || { rev: 0, gross: 0, costs: 0, preTax: 0, tax: 0, net: 0, loan: 0, grant: 0, cash: 0, clients: 0 };
+    Y.rev += R.revenue; Y.gross += R.grossReceipts; Y.costs += R.costs + interest; Y.preTax += preTax; Y.tax += tax; Y.net += net;
+    Y.loan += interest + principal; Y.grant += grant; Y.cash += cash; Y.clients += R.clients; Y.end = c;
   }
-  return { start: -C.spend, cum, monthly, payback, min };
+  return { start, cum, monthly, years, payback, min, loan: lp, H };
 }
 
 function breakeven(s) {
@@ -487,14 +546,150 @@ const TABS = {
   capex: { label: 'Έξοδα έναρξης', render: rCapex, fill: fCapex },
   fixed: { label: 'Μηνιαία έξοδα', render: rFixed, fill: fFixed },
   partners: { label: 'Εταίροι', render: rPartners, fill: fPartners },
-  settings: { label: 'Παραδοχές', render: rSettings, fill: () => {} }
+  settings: { label: 'Παραδοχές', render: rSettings, fill: () => {} },
+  history: { label: 'Ιστορικό', render: rHistory, fill: () => {} }
 };
+
+/* ---------- Charts ---------- */
+const CHARTS = new Map();
+let chartSeq = 0;
+const SER = ['var(--c1)', 'var(--c2)', 'var(--c3)', 'var(--c4)', 'var(--c5)', 'var(--c6)', 'var(--c7)', 'var(--c8)'];
+const cw = id => Math.max(280, (($(id) || {}).clientWidth || 800));
+const tipHTML = (title, rows) => `<b>${title}</b>${rows.map(([c, n, v]) => `<div class="tr"><span>${c ? `<i class="dot" style="background:${c}"></i>` : ''}${n}</span><span>${v}</span></div>`).join('')}`;
+const attr = h => esc(h);
+const legend = items => `<div class="lg">${items.map(([c, n, kind]) => `<span><i class="${kind || ''}" style="background:${c};color:${c}"></i>${n}</span>`).join('')}</div>`;
+
+function scaleY(vals, H, P, zero = true) {
+  let lo = Math.min(...vals, zero ? 0 : Infinity), hi = Math.max(...vals, zero ? 0 : -Infinity);
+  if (hi - lo < 1) hi = lo + 1;
+  const pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
+  if (zero && Math.min(...vals) >= 0) lo = 0;
+  const y = v => P.t + (H - P.t - P.b) * (hi - v) / (hi - lo);
+  return { lo, hi, y };
+}
+function gridY(lo, hi, y, P, W) {
+  const step = niceStep((hi - lo) / 4);
+  let g = '';
+  for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) {
+    g += `<line x1="${P.l}" x2="${W - P.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="${Math.abs(v) < 1e-9 ? 0 : 1}"/><text x="${P.l - 8}" y="${y(v) + 4}" text-anchor="end">${kEur(v)}</text>`;
+  }
+  if (lo < 0 && hi > 0) g += `<line x1="${P.l}" x2="${W - P.r}" y1="${y(0)}" y2="${y(0)}" stroke="var(--muted)" stroke-width="1.2"/>`;
+  return g;
+}
+
+/* o: w, n, series[{name,color,values,dash}], ticks[], xLabel(i), tip(i), area, refs[{y,label,color}], vline{at,label}, marks[{i,v,label}], label */
+function lineChart(o) {
+  const id = 'ch' + (++chartSeq), W = o.w, narrow = W < 600;
+  const H = o.h || (narrow ? 220 : 270), P = { l: 52, r: 14, t: 22, b: 28 }, n = o.n;
+  const all = o.series.flatMap(s => s.values).concat((o.refs || []).map(r => r.y));
+  const { lo, hi, y } = scaleY(all, H, P);
+  const x = i => P.l + (W - P.l - P.r) * (n > 1 ? i / (n - 1) : 0.5);
+  let g = gridY(lo, hi, y, P, W);
+  o.ticks.forEach(i => { g += `<text x="${x(i)}" y="${H - 8}" text-anchor="${i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'}">${o.xLabel(i)}</text>`; });
+  if (o.area) {
+    const v = o.series[0].values;
+    const d = v.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p).toFixed(1)}`).join('') + `L${x(n - 1)},${y(0)}L${x(0)},${y(0)}Z`;
+    g += `<defs><clipPath id="${id}a"><rect x="0" y="0" width="${W}" height="${y(0)}"/></clipPath><clipPath id="${id}b"><rect x="0" y="${y(0)}" width="${W}" height="${H}"/></clipPath></defs>
+      <path d="${d}" fill="var(--pos)" opacity=".13" clip-path="url(#${id}a)"/><path d="${d}" fill="var(--neg)" opacity=".11" clip-path="url(#${id}b)"/>`;
+  }
+  (o.refs || []).forEach(r => { g += `<line x1="${P.l}" x2="${W - P.r}" y1="${y(r.y)}" y2="${y(r.y)}" stroke="${r.color}" stroke-dasharray="5 4" stroke-width="1.5" opacity=".8"/>`; });
+  if (o.vline) {
+    const vx = P.l + (W - P.l - P.r) * o.vline.at / (n - 1);
+    const right = vx > W * 0.6;
+    g += `<line x1="${vx}" x2="${vx}" y1="${P.t}" y2="${H - P.b}" stroke="var(--ink)" stroke-dasharray="3 4" opacity=".55"/><text x="${vx + (right ? -6 : 6)}" y="${P.t - 8}" text-anchor="${right ? 'end' : 'start'}" style="fill:var(--ink);font-weight:600">${o.vline.label}</text>`;
+  }
+  o.series.forEach(s => {
+    g += `<path d="${s.values.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('')}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"${s.dash ? ' stroke-dasharray="6 4"' : ''}/>`;
+  });
+  (o.marks || []).forEach(m => {
+    const mx = x(m.i), right = mx > W * 0.6;
+    g += `<line x1="${mx}" x2="${mx}" y1="${P.t}" y2="${H - P.b}" stroke="var(--pos)" stroke-dasharray="4 4"/><circle cx="${mx}" cy="${y(m.v)}" r="5" fill="var(--pos)" stroke="var(--surface)" stroke-width="2"/><text x="${mx + (right ? -7 : 7)}" y="${P.t - 8}" text-anchor="${right ? 'end' : 'start'}" style="fill:var(--pos);font-weight:600">${m.label}</text>`;
+  });
+  g += `<line class="xh" x1="0" x2="0" y1="${P.t}" y2="${H - P.b}" stroke="var(--muted)" stroke-dasharray="3 3" visibility="hidden"/>`;
+  o.series.forEach(s => { g += `<circle class="xm" r="4.5" fill="${s.color}" stroke="var(--surface)" stroke-width="2" visibility="hidden"/>`; });
+  g += `<rect x="${P.l}" y="${P.t}" width="${W - P.l - P.r}" height="${H - P.t - P.b}" fill="transparent"/>`;
+  CHARTS.set(id, { kind: 'line', W, n, P, x, y, series: o.series, tip: o.tip });
+  return `<svg class="chart" data-chart="${id}" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${attr(o.label)}">${g}</svg>`;
+}
+
+/* o: w, values, ticks, xLabel(i), tip(i), label */
+function barChart(o) {
+  const W = o.w, H = o.h || (W < 600 ? 170 : 190), P = { l: 52, r: 14, t: 10, b: 28 }, n = o.values.length;
+  const { lo, hi, y } = scaleY(o.values, H, P);
+  const band = (W - P.l - P.r) / n, bw = Math.max(2, band * 0.7);
+  let g = gridY(lo, hi, y, P, W);
+  o.ticks.forEach(i => { g += `<text x="${P.l + band * (i + 0.5)}" y="${H - 8}" text-anchor="middle">${o.xLabel(i)}</text>`; });
+  o.values.forEach((v, i) => {
+    const x0 = P.l + band * i + (band - bw) / 2, y0 = y(Math.max(0, v)), h = Math.max(1, Math.abs(y(v) - y(0)));
+    g += `<rect x="${x0}" y="${y0}" width="${bw}" height="${h}" rx="${Math.min(2, bw / 2)}" fill="${v >= 0 ? 'var(--pos)' : 'var(--neg)'}" opacity=".85"/>`;
+    g += `<rect x="${P.l + band * i}" y="${P.t}" width="${band}" height="${H - P.t - P.b}" fill="transparent" data-tip="${attr(o.tip(i))}"/>`;
+  });
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${attr(o.label)}">${g}</svg>`;
+}
+
+/* parts[{name,value,color}], center {big, small} */
+function donut(parts, center, size = 180) {
+  const tot = parts.reduce((a, p) => a + Math.max(0, p.value), 0) || 1;
+  const r = size / 2 - 16, C = 2 * Math.PI * r, cx = size / 2;
+  let off = 0, g = `<circle cx="${cx}" cy="${cx}" r="${r}" fill="none" stroke="var(--surface2)" stroke-width="24"/>`;
+  parts.filter(p => p.value > 0).forEach(p => {
+    const len = p.value / tot * C, dash = Math.max(0.5, len - 2);
+    g += `<circle cx="${cx}" cy="${cx}" r="${r}" fill="none" stroke="${p.color}" stroke-width="24" stroke-dasharray="${dash} ${C - dash}" stroke-dashoffset="${-off}" transform="rotate(-90 ${cx} ${cx})" data-tip="${attr(tipHTML(esc(p.name), [[p.color, 'Ποσό', eur(p.value)], ['', 'Μερίδιο', num1(p.value / tot * 100) + '%']]))}"/>`;
+    off += len;
+  });
+  g += `<text x="${cx}" y="${cx - 2}" text-anchor="middle" style="fill:var(--ink);font-size:18px;font-weight:700">${center.big}</text><text x="${cx}" y="${cx + 16}" text-anchor="middle">${center.small}</text>`;
+  return `<svg class="chart" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img" aria-label="${attr(center.small)}">${g}</svg>`;
+}
+function donutBlock(parts, center, total) {
+  const tot = total || parts.reduce((a, p) => a + Math.max(0, p.value), 0) || 1;
+  return `<div class="donutwrap">${donut(parts, center)}<div class="legend">${parts.map(p => `<div class="row" data-tip="${attr(tipHTML(esc(p.name), [[p.color, 'Ποσό', eur(p.value)], ['', 'Μερίδιο', num1(p.value / tot * 100) + '%']]))}"><span><i class="dot" style="background:${p.color}"></i>${esc(p.name)}</span><span>${eur(p.value)} <span class="small">${num(p.value / tot * 100)}%</span></span></div>`).join('')}</div></div>`;
+}
+
+const tipEl = document.createElement('div');
+tipEl.className = 'tip';
+document.body.appendChild(tipEl);
+function placeTip(e, html) {
+  tipEl.innerHTML = html; tipEl.classList.add('on');
+  const w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+  let l = e.clientX + 14, t = e.clientY - h - 12;
+  if (l + w > innerWidth - 8) l = e.clientX - w - 14;
+  if (l < 8) l = 8;
+  if (t < 8) t = e.clientY + 18;
+  tipEl.style.left = l + 'px'; tipEl.style.top = t + 'px';
+}
+function hideTip() {
+  tipEl.classList.remove('on');
+  document.querySelectorAll('svg .xh, svg .xm').forEach(el => el.setAttribute('visibility', 'hidden'));
+}
+function onPointer(e) {
+  const t = e.target && e.target.closest ? e.target : null;
+  if (!t) return hideTip();
+  const svg = t.closest('svg[data-chart]'), c = svg && CHARTS.get(svg.dataset.chart);
+  if (c && c.kind === 'line') {
+    const rc = svg.getBoundingClientRect(), px = (e.clientX - rc.left) * c.W / rc.width;
+    const i = Math.max(0, Math.min(c.n - 1, Math.round((px - c.P.l) / (c.W - c.P.l - c.P.r) * (c.n - 1))));
+    document.querySelectorAll('svg .xh, svg .xm').forEach(el => { if (!svg.contains(el)) el.setAttribute('visibility', 'hidden'); });
+    const xh = svg.querySelector('.xh'); xh.setAttribute('x1', c.x(i)); xh.setAttribute('x2', c.x(i)); xh.setAttribute('visibility', 'visible');
+    svg.querySelectorAll('.xm').forEach((m, k) => { m.setAttribute('cx', c.x(i)); m.setAttribute('cy', c.y(c.series[k].values[i])); m.setAttribute('visibility', 'visible'); });
+    placeTip(e, c.tip(i));
+    return;
+  }
+  const d = t.closest('[data-tip]');
+  if (d) return placeTip(e, d.dataset.tip);
+  hideTip();
+}
+document.addEventListener('pointermove', onPointer);
+document.addEventListener('pointerdown', onPointer);
+document.addEventListener('scroll', hideTip, { passive: true });
+
+const monthName = i => `${i}ος μήνας`;
+const MODE_SER = { salary: ['var(--c1)', 'Όλοι μισθωτοί'], commission: ['var(--c2)', 'Όλοι με ποσοστό'], rent: ['var(--c3)', 'Όλοι με ενοικίαση θέσης'] };
 
 /* ---------- Overview ---------- */
 function rOverview() {
   return `
   <h2>Πόσο βγάζει το μαγαζί</h2>
-  <p class="lead">Κουρείο 75 τ.μ. στην Καλαμάτα με ${S.barbers.length} θέσεις και γωνιά καφέ. Άλλαξε πόσους κουρεύει ο καθένας και τις τιμές· όλα τα νούμερα ενημερώνονται αμέσως. Τα ποσά είναι μηνιαία, χωρίς ΦΠΑ, εκτός αν γράφει «με ΦΠΑ».</p>
+  <p class="lead">Κουρείο 75 τ.μ. στην Καλαμάτα με ${S.barbers.length} θέσεις και γωνιά καφέ. Άλλαξε πόσους κουρεύει ο καθένας και τις τιμές· όλα τα νούμερα ενημερώνονται αμέσως. Τα ποσά είναι μηνιαία, χωρίς ΦΠΑ, εκτός αν γράφει «με ΦΠΑ». Πέρνα το δάχτυλο ή το ποντίκι πάνω από τα διαγράμματα για λεπτομέρειες.</p>
   <div class="kgrid" id="ov-kpis"></div>
   <div class="grid g2">
     <div class="card">
@@ -509,12 +704,27 @@ function rOverview() {
       </div>
       <div class="note" id="ov-ticket"></div>
     </div>
-    <div class="card"><h3>Μηνιαίος λογαριασμός (πλήρης λειτουργία)</h3><div id="ov-pl"></div></div>
+    <div class="card"><h3>Μηνιαίος λογαριασμός (πλήρης λειτουργία, 1ο έτος)</h3><div id="ov-pl"></div></div>
   </div>
-  <div class="card sec"><h3>Ταμείο από την πρώτη μέρα</h3><p class="small" style="margin-top:-6px" id="ov-cf-sub"></p><div id="ov-cf"></div></div>
+  <div class="card sec">
+    <h3>Ταμείο εταίρων από την πρώτη μέρα</h3>
+    <p class="small" style="margin-top:-6px" id="ov-cf-sub"></p>
+    <div id="ov-cf"></div>
+    <div class="sub2">Αποτέλεσμα κάθε μήνα</div>
+    <div id="ov-mb"></div>
+    <div class="sub2">Ανά έτος</div>
+    <div class="scroll" id="ov-years"></div>
+  </div>
   <div class="grid g2 sec">
+    <div class="card"><h3>Πού πάνε τα έσοδα κάθε μήνα</h3><div id="ov-donut"></div></div>
     <div class="card"><h3>Πού πάει κάθε κούρεμα</h3><div id="ov-cut"></div></div>
-    <div class="card"><h3>Μισθός, ποσοστό ή ενοικίαση;</h3><p class="small" style="margin-top:-6px">Αν όλοι οι κουρείς (εκτός εταίρων) δούλευαν με το ίδιο μοντέλο, με τα σημερινά νούμερα:</p><div class="models" id="ov-models"></div><div class="note" id="ov-models-note"></div></div>
+  </div>
+  <div class="card sec">
+    <h3>Μισθός, ποσοστό ή ενοικίαση;</h3>
+    <p class="small" style="margin-top:-6px">Καθαρό κέρδος/μήνα αν όλοι οι κουρείς (εκτός εταίρων) δούλευαν με το ίδιο μοντέλο, ανάλογα με το πόσα κουρέματα κάνουν.</p>
+    <div class="models" id="ov-models"></div>
+    <div id="ov-mline" style="margin-top:12px"></div>
+    <div class="note" id="ov-models-note"></div>
   </div>
   <div class="card sec">
     <h3>Καθαρό κέρδος/μήνα ανά κουρέματα και τιμή</h3>
@@ -525,13 +735,14 @@ function rOverview() {
 
 function fOverview(R) {
   const C = capexTotals(S, R), CF = cashflow(S, C), BE = breakeven(S);
-  const st = S.settings;
+  const st = S.settings, lp = CF.loan;
+  const own = Math.max(0, C.total - lp.L);
   setHTML('ov-kpis', [
     ['Τζίρος/μήνα (με ΦΠΑ)', eur(R.grossReceipts + R.rev.chairRent * (1 + st.vatServices / 100)), `${num(R.clients)} πελάτες`],
     ['Κέρδος προ φόρων', `<span class="${sgn(R.preTax)}">${eur(R.preTax)}</span>`, `${eur(R.preTax * 12)} / έτος`],
     ['Καθαρό μετά φόρων', `<span class="${sgn(R.net)}">${eur(R.net)}</span>`, `${eur(R.net * 12)} / έτος`],
-    ['Απαιτούμενο κεφάλαιο', eur(C.total), `έξοδα ${eur(C.spend)} + αποθεματικό ${eur(C.reserve)}`],
-    ['Απόσβεση', CF.payback ? `${CF.payback} μήνες` : `> ${st.horizon} μήνες`, CF.payback ? `με σταδιακή εκκίνηση ${st.rampMonths} μηνών` : 'δεν αποσβένεται'],
+    ['Απαιτούμενο κεφάλαιο', eur(C.total), lp.L ? `εταίροι ${eur(own)} · δάνειο ${eur(lp.L)}` : `έξοδα ${eur(C.spend)} + αποθεματικό ${eur(C.reserve)}`],
+    ['Απόσβεση', CF.payback ? `${CF.payback} μήνες` : `> ${CF.H} μήνες`, CF.payback ? `με σταδιακή εκκίνηση ${st.rampMonths} μηνών` : 'δεν αποσβένεται στο διάστημα'],
     ['Νεκρό σημείο', BE.cpd != null ? `${num1(BE.cpd)} κουρ./ημέρα` : '—', BE.cpd != null ? `ανά κουρέα (σήμερα ${num1(BE.avg)})` : 'δεν υπάρχουν μισθωτοί/ποσοστό']
   ].map(([l, v, e]) => `<div class="card kpi"><span>${l}</span><b>${v}</b><em>${e}</em></div>`).join(''));
 
@@ -554,12 +765,52 @@ function fOverview(R) {
     row('Κέρδος προ φόρων', `<span class="${sgn(R.preTax)}">${eur(R.preTax)}</span>`, 'sub') +
     row(`Φόρος εταιρείας ${st.corpTax}%`, '−' + eur(R.tax)) +
     row('Καθαρό κέρδος', `<span class="${sgn(R.net)}">${eur(R.net)}</span>`, 'tot') +
-    row(`Προς διανομή (μετά φόρο μερισμάτων ${st.dividendTax}%)`, eur(R.dist)));
+    (lp.pay ? row(`Δόση δανείου (${num(lp.L)} € / ${num1(lp.N / 12)} έτη)`, '−' + eur(lp.pay)) + row('Μένει μετά τη δόση', `<span class="${sgn(R.net - lp.pay)}">${eur(R.net - lp.pay)}</span>`, 'sub') : '') +
+    row(`Προς διανομή (μετά φόρο μερισμάτων ${st.dividendTax}%)`, eur(Math.max(0, R.net - lp.pay) * (1 - st.dividendTax / 100))));
 
-  setHTML('ov-cf-sub', `Ξεκινά από −${eur(C.spend)} (έξοδα έναρξης + απρόβλεπτα). Πρώτος μήνας στο ${st.rampStart}% της πελατείας, πλήρης μετά από ${st.rampMonths} μήνες. ` +
-    `Χαμηλότερο σημείο ταμείου: <b>${eur(CF.min)}</b>. ` + (CF.payback ? `Τα λεφτά επιστρέφουν τον <b>${CF.payback}ο μήνα</b>.` : `<b class="neg">Δεν επιστρέφουν μέσα σε ${st.horizon} μήνες.</b>`) +
-    (-CF.min > C.spend + C.reserve ? ` <b class="neg">Το ταμείο πέφτει στα ${eur(CF.min)} — το αποθεματικό των ${eur(C.reserve)} δεν φτάνει.</b>` : ''));
-  setHTML('ov-cf', cashSvg(CF, Math.max(320, ($('ov-cf') || {}).clientWidth || 800)));
+  // cashflow line
+  setHTML('ov-cf-sub', `Ξεκινά από ${eur(CF.start)} (έξοδα έναρξης + απρόβλεπτα${lp.L ? ' − δάνειο' : ''}). Πρώτος μήνας στο ${st.rampStart}% της πελατείας, πλήρης μετά από ${st.rampMonths} μήνες· τιμές +${num1(st.priceGrowth)}%, μισθοί +${num1(st.wageGrowth)}%, πάγια +${num1(st.costGrowth)}% τον χρόνο. ` +
+    `Χαμηλότερο σημείο: <b>${eur(CF.min)}</b>. ` + (CF.payback ? `Τα λεφτά επιστρέφουν τον <b>${CF.payback}ο μήνα</b>.` : `<b class="neg">Δεν επιστρέφουν μέσα σε ${CF.H} μήνες.</b>`) +
+    (-CF.min > -CF.start + C.reserve ? ` <b class="neg">Το ταμείο πέφτει ${eur(-CF.min + CF.start)} κάτω από την αρχική επένδυση — το αποθεματικό των ${eur(C.reserve)} δεν φτάνει.</b>` : ''));
+  const w = cw('ov-cf'), narrow = w < 600, H = CF.H;
+  const vals = [CF.start, ...CF.cum];
+  const step = narrow ? 12 : 6, ticks = [];
+  for (let i = 0; i <= H; i += step) ticks.push(i);
+  setHTML('ov-cf', lineChart({
+    w, n: H + 1, label: 'Σωρευτικό ταμείο εταίρων ανά μήνα', area: true,
+    series: [{ name: 'Ταμείο', color: 'var(--accent)', values: vals }],
+    ticks, xLabel: i => i === 0 ? 'Έναρξη' : i + 'ος',
+    marks: CF.payback ? [{ i: CF.payback, v: vals[CF.payback], label: `απόσβεση · μήνας ${CF.payback}` }] : [],
+    tip: i => tipHTML(i === 0 ? 'Έναρξη' : monthName(i), [['var(--accent)', 'Σωρευτικά', eur(vals[i])]].concat(i ? [['', 'Αυτόν τον μήνα', eur(CF.monthly[i - 1])], ['', 'Πελατεία', num(rampK(S, i) * 100) + '%']] : []))
+  }));
+  const mt = []; for (let i = 0; i < H; i += step) mt.push(i);
+  setHTML('ov-mb', barChart({
+    w, values: CF.monthly, ticks: mt, xLabel: i => (i + 1) + 'ος', label: 'Ταμειακό αποτέλεσμα ανά μήνα',
+    tip: i => tipHTML(monthName(i + 1), [[CF.monthly[i] >= 0 ? 'var(--pos)' : 'var(--neg)', 'Αποτέλεσμα', eur(CF.monthly[i])], ['', 'Πελατεία', num(rampK(S, i + 1) * 100) + '%']])
+  }));
+  const Y = CF.years;
+  setHTML('ov-years', `<table class="tbl yrs"><tr><th></th>${Y.map((_, i) => `<th>${i + 1}ο έτος</th>`).join('')}</tr>
+    <tr><td>Πελάτες</td>${Y.map(y => `<td>${num(y.clients)}</td>`).join('')}</tr>
+    <tr><td>Τζίρος (με ΦΠΑ)</td>${Y.map(y => `<td>${eur(y.gross)}</td>`).join('')}</tr>
+    <tr><td>Έσοδα</td>${Y.map(y => `<td>${eur(y.rev)}</td>`).join('')}</tr>
+    <tr><td>Έξοδα</td>${Y.map(y => `<td>−${eur(y.costs)}</td>`).join('')}</tr>
+    <tr><td>Φόρος</td>${Y.map(y => `<td>−${eur(y.tax)}</td>`).join('')}</tr>
+    <tr style="font-weight:700"><td>Καθαρό κέρδος</td>${Y.map(y => `<td class="${sgn(y.net)}">${eur(y.net)}</td>`).join('')}</tr>
+    ${lp.L ? `<tr><td>Δόσεις δανείου</td>${Y.map(y => `<td>−${eur(y.loan)}</td>`).join('')}</tr>` : ''}
+    ${Y.some(y => y.grant) ? `<tr><td>Επιδότηση</td>${Y.map(y => `<td>${y.grant ? eur(y.grant) : '—'}</td>`).join('')}</tr>` : ''}
+    <tr><td>Ταμείο τέλος έτους</td>${Y.map(y => `<td class="${sgn(y.end)}">${eur(y.end)}</td>`).join('')}</tr></table>`);
+
+  // donut: where revenue goes
+  const dParts = [
+    { name: 'Κουρείς (μισθοί/ποσοστά)', value: c.staff, color: SER[0] },
+    { name: 'Πάγια', value: c.fixed, color: SER[1] },
+    { name: 'Μπαρίστα', value: c.barista, color: SER[2] },
+    { name: 'Αναλώσιμα, καφές, προϊόντα', value: c.consum + c.coffee + c.retail, color: SER[3] },
+    { name: 'Προμήθειες καρτών', value: c.card, color: SER[4] },
+    { name: 'Φόρος', value: R.tax, color: SER[6] },
+    { name: R.net >= 0 ? 'Καθαρό κέρδος' : 'Ζημιά', value: Math.max(0, R.net), color: SER[5] }
+  ].filter(p => p.value > 0.5);
+  setHTML('ov-donut', `<p class="small" style="margin-top:-6px">Από τα ${eur(R.revenue)} εσόδων του μήνα (χωρίς ΦΠΑ).</p>` + donutBlock(dParts, { big: eur(R.revenue), small: 'έσοδα/μήνα' }));
 
   // per-cut
   if (R.shopCuts > 0) {
@@ -570,12 +821,12 @@ function fOverview(R) {
     const tax = R.tax / n, prof = R.net / n;
     const over = g - vat - staff - cons - cardc - tax - prof;
     const parts = [
-      ['ΦΠΑ', vat, 'var(--c6)'], ['Κουρέας (μισθός/ποσοστό)', staff, 'var(--c2)'], ['Αναλώσιμα & POS', cons + cardc, 'var(--c3)'],
-      ['Ενοίκιο, μπαρίστα, πάγια', over, 'var(--c5)'], ['Φόρος', tax, 'var(--c4)'], [prof >= 0 ? 'Κέρδος' : 'Ζημιά', prof, 'var(--c1)']
+      ['ΦΠΑ', vat, SER[7]], ['Κουρέας (μισθός/ποσοστό)', staff, SER[0]], ['Ενοίκιο, μπαρίστα, πάγια', over, SER[1]],
+      ['Αναλώσιμα & POS', cons + cardc, SER[3]], ['Φόρος', tax, SER[6]], [prof >= 0 ? 'Κέρδος' : 'Ζημιά', prof, SER[5]]
     ];
     const tot = parts.reduce((a, p) => a + Math.max(0, p[1]), 0) || 1;
     setHTML('ov-cut', `<p class="small" style="margin-top:-6px">Μέση απόδειξη ${eur2(g)} — από κουρέματα που εισπράττει το μαγαζί.</p>
-      <div class="stack">${parts.filter(p => p[1] > 0).map(p => `<div style="width:${p[1] / tot * 100}%;background:${p[2]}" title="${p[0]}"></div>`).join('')}</div>
+      <div class="stack">${parts.filter(p => p[1] > 0).map(p => `<div style="width:${p[1] / tot * 100}%;background:${p[2]};border-right:2px solid var(--surface)" data-tip="${attr(tipHTML(p[0], [[p[2], 'Ανά κούρεμα', eur2(p[1])], ['', 'Μερίδιο', num(p[1] / g * 100) + '%']]))}"></div>`).join('')}</div>
       <div class="legend">${parts.map(p => `<div class="row"><span><i class="dot" style="background:${p[2]}"></i>${p[0]}</span><span class="${p[1] < 0 ? 'neg' : ''}">${eur2(p[1])}</span></div>`).join('')}</div>`);
   } else setHTML('ov-cut', '<p class="small">Όλοι οι κουρείς είναι σε ενοικίαση θέσης — το μαγαζί δεν εισπράττει κουρέματα.</p>');
 
@@ -584,53 +835,41 @@ function fOverview(R) {
   const best = ms.reduce((a, b) => b.R.net > a.R.net ? b : a);
   setHTML('ov-models', ms.map(({ m, R: x }) => {
     const C2 = capexTotals(S, x);
-    return `<div class="model ${m === best.m ? 'best' : ''}"><span class="small">${{ salary: 'Όλοι μισθωτοί', commission: 'Όλοι με ποσοστό', rent: 'Όλοι με ενοικίαση θέσης' }[m]}</span><b class="${sgn(x.net)}">${eur(x.net)}</b><span class="small">καθαρό/μήνα · αποθεματικό ${eur(C2.reserve)}</span></div>`;
+    return `<div class="model ${m === best.m ? 'best' : ''}"><span class="small"><i class="dot" style="background:${MODE_SER[m][0]};margin-right:6px"></i>${MODE_SER[m][1]}</span><b class="${sgn(x.net)}">${eur(x.net)}</b><span class="small">καθαρό/μήνα · αποθεματικό ${eur(C2.reserve)}</span></div>`;
   }).join(''));
+  const cps = []; for (let v = 4; v <= 18; v++) cps.push(v);
+  const mser = ['salary', 'commission', 'rent'].map(m => ({ name: MODE_SER[m][1], color: MODE_SER[m][0], values: cps.map(v => compute(S, { mode: m, cpd: v }).net) }));
+  const mw = cw('ov-mline');
+  setHTML('ov-mline', legend(mser.map(sr => [sr.color, sr.name])) + lineChart({
+    w: mw, n: cps.length, label: 'Καθαρό κέρδος ανά μοντέλο και κουρέματα/ημέρα', series: mser,
+    ticks: cps.map((_, i) => i).filter(i => i % 2 === 0), xLabel: i => String(cps[i]),
+    vline: BE.avg >= 4 && BE.avg <= 18 ? { at: BE.avg - 4, label: `σήμερα ${num1(BE.avg)}` } : null,
+    tip: i => tipHTML(`${cps[i]} κουρέματα/ημέρα ανά κουρέα`, mser.map(sr => [sr.color, sr.name, eur(sr.values[i])]))
+  }));
+  // crossover salary vs commission
+  let cross = null;
+  for (let i = 1; i < cps.length; i++) { const a = mser[0].values[i - 1] - mser[1].values[i - 1], b = mser[0].values[i] - mser[1].values[i]; if (a < 0 && b >= 0) { cross = cps[i - 1] + a / (a - b); break; } }
   const avgB = S.barbers.filter(b => b.mode !== 'partner');
   const rentAvg = avgB.length ? avgB.reduce((a, b) => a + (+b.rent || 0), 0) / avgB.length : 0;
   const pctAvg = avgB.length ? avgB.reduce((a, b) => a + (+b.barberPct || 0), 0) / avgB.length : 0;
-  setHTML('ov-models-note', `Ενοίκιο θέσης ~${eur(rentAvg)}/μήνα, ποσοστό κουρέα ~${num(pctAvg)}%. Μισθωτοί = μεγαλύτερο κέρδος όταν κουρεύουν πολύ, αλλά σταθερό κόστος και ρίσκο όταν το μαγαζί είναι άδειο. Ενοικίαση = μικρό αλλά σίγουρο έσοδο.`);
+  setHTML('ov-models-note', `Ενοίκιο θέσης ~${eur(rentAvg)}/μήνα, ποσοστό κουρέα ~${num(pctAvg)}%. ` +
+    (cross ? `<b>Οι μισθωτοί συμφέρουν από ~${num1(cross)} κουρέματα/ημέρα και πάνω</b>· κάτω από αυτό συμφέρει το ποσοστό. ` : '') +
+    `Μισθωτοί = μεγαλύτερο κέρδος όταν κουρεύουν πολύ, αλλά σταθερό κόστος όταν το μαγαζί είναι άδειο. Ενοικίαση = μικρό αλλά σίγουρο έσοδο.`);
 
   // heat
   const rows = [6, 8, 10, 12, 14, 16], cols = [12, 14, 16, 18, 20, 22];
-  const vals = rows.map(r => cols.map(t => compute(S, { cpd: r, ticket: t }).net));
-  const mx = Math.max(1, ...vals.flat().map(Math.abs));
+  const hv = rows.map(rr => cols.map(t => compute(S, { cpd: rr, ticket: t }).net));
+  const mx = Math.max(1, ...hv.flat().map(Math.abs));
   const curR = rows.reduce((a, b) => Math.abs(b - BE.avg) < Math.abs(a - BE.avg) ? b : a);
   const curC = cols.reduce((a, b) => Math.abs(b - R.avgTicket) < Math.abs(a - R.avgTicket) ? b : a);
-  setHTML('ov-heat', `<table class="heat"><tr><th>κουρ./ημέρα</th>${cols.map(c => `<th>${c} €</th>`).join('')}</tr>${rows.map((r, i) => `<tr><th>${r}</th>${cols.map((c, j) => {
-    const v = vals[i][j], a = Math.min(1, Math.abs(v) / mx) * 0.85 + 0.08;
+  setHTML('ov-heat', `<table class="heat"><tr><th>κουρ./ημέρα</th>${cols.map(cc => `<th>${cc} €</th>`).join('')}</tr>${rows.map((rr, i) => `<tr><th>${rr}</th>${cols.map((cc, j) => {
+    const v = hv[i][j], a = Math.min(1, Math.abs(v) / mx) * 0.85 + 0.08;
     const bg = v >= 0 ? `color-mix(in srgb,var(--pos) ${a * 100}%,var(--surface))` : `color-mix(in srgb,var(--neg) ${a * 100}%,var(--surface))`;
     const fg = a > 0.5 ? '#fff' : 'var(--ink)';
-    return `<td style="background:${bg};color:${fg}" class="${r === curR && c === curC ? 'cur' : ''}">${kEur(v)}</td>`;
+    return `<td style="background:${bg};color:${fg}" class="${rr === curR && cc === curC ? 'cur' : ''}" data-tip="${attr(tipHTML(`${rr} κουρ./ημέρα × ${cc} €`, [['', 'Καθαρό/μήνα', eur(v)], ['', 'Καθαρό/έτος', eur(v * 12)]]))}">${kEur(v)}</td>`;
   }).join('')}</tr>`).join('')}</table><p class="small">Περίγραμμα = πιο κοντά στα σημερινά νούμερα.</p>`);
 }
 
-function cashSvg(CF, W = 800) {
-  const H = W < 600 ? 220 : 260, P = { l: 52, r: 10, t: 18, b: 28 };
-  const pts = [CF.start, ...CF.cum], n = pts.length - 1;
-  let lo = Math.min(0, ...pts), hi = Math.max(0, ...pts);
-  if (hi - lo < 1) hi = lo + 1;
-  const pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
-  const x = i => P.l + (W - P.l - P.r) * i / n;
-  const y = v => P.t + (H - P.t - P.b) * (hi - v) / (hi - lo);
-  const step = niceStep((hi - lo) / 4);
-  let grid = '';
-  for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) grid += `<line x1="${P.l}" x2="${W - P.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${P.l - 8}" y="${y(v) + 4}" text-anchor="end">${kEur(v)}</text>`;
-  let xl = '';
-  for (let i = 0; i <= n; i += (W < 600 ? 12 : 6)) xl += `<text x="${x(i)}" y="${H - 8}" text-anchor="${i === 0 ? 'start' : i + (W < 600 ? 12 : 6) > n ? 'end' : 'middle'}">${i === 0 ? 'Έναρξη' : i + 'ος'}</text>`;
-  const line = pts.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
-  const area = `${line}L${x(n)},${y(0)}L${x(0)},${y(0)}Z`;
-  const pb = CF.payback ? `<line x1="${x(CF.payback)}" x2="${x(CF.payback)}" y1="${P.t}" y2="${H - P.b}" stroke="var(--pos)" stroke-dasharray="4 4"/><circle cx="${x(CF.payback)}" cy="${y(pts[CF.payback])}" r="5" fill="var(--pos)"/><text x="${x(CF.payback) + (x(CF.payback) > W * 0.65 ? -7 : 7)}" y="${P.t - 4}" text-anchor="${x(CF.payback) > W * 0.65 ? 'end' : 'start'}" style="fill:var(--pos);font-weight:600">απόσβεση · μήνας ${CF.payback}</text>` : '';
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Σωρευτικό ταμείο ανά μήνα">
-    <defs><clipPath id="above"><rect x="0" y="0" width="${W}" height="${y(0)}"/></clipPath><clipPath id="below"><rect x="0" y="${y(0)}" width="${W}" height="${H}"/></clipPath></defs>
-    ${grid}${xl}
-    <path d="${area}" fill="var(--pos)" opacity=".14" clip-path="url(#above)"/>
-    <path d="${area}" fill="var(--neg)" opacity=".12" clip-path="url(#below)"/>
-    <line x1="${P.l}" x2="${W - P.r}" y1="${y(0)}" y2="${y(0)}" stroke="var(--muted)" stroke-width="1.2"/>
-    <path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>
-    ${pb}
-  </svg>`;
-}
 function niceStep(raw) { const p = Math.pow(10, Math.floor(Math.log10(raw || 1))); const f = raw / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; }
 
 /* ---------- Barbers ---------- */
@@ -652,6 +891,7 @@ function rBarbers() {
     ${S.barbers.map((b, i) => barberCard(b, i)).join('')}
     <button class="card" data-act="addBarber" style="border-style:dashed;color:var(--muted);min-height:120px;font-weight:600">+ Προσθήκη κουρέα</button>
   </div>
+  <div class="card sec"><h3>Τι φέρνει ο καθένας</h3><div id="bb-chart"></div></div>
   <div class="card sec"><h3>Σύνοψη ανά κουρέα</h3><div class="scroll" id="bb-sum"></div></div>`;
 }
 function barberCard(b, i) {
@@ -678,6 +918,13 @@ function fBarbers(R) {
     <div><span>Μένει στο μαγαζί</span><b class="${sgn(b.contrib)}">${eur(b.contrib)}</b></div>
     <div><span>Παίρνει ο ίδιος</span><b>${b.mode === 'partner' ? '—' : eur(b.barberEarn)}</b></div>
     <div style="grid-column:1/-1"><span>${b.mode === 'partner' ? 'Εταίρος' : esc(b.barberNote)}</span></div>`));
+  const mx = Math.max(1, ...R.barbers.flatMap(b => [Math.abs(b.contrib), Math.max(0, b.barberEarn)]));
+  setHTML('bb-chart', legend([['var(--c1)', 'Μένει στο μαγαζί', 'sq'], ['var(--c2)', 'Παίρνει ο κουρέας', 'sq']]) + R.barbers.map(b => {
+    const tip = attr(tipHTML(`${esc(b.name)} · ${MODES[b.mode].label}`, [['', 'Πελάτες/μήνα', num(b.cuts)], ['', 'Τζίρος με ΦΠΑ', eur(b.gross)], ['var(--c1)', 'Μένει στο μαγαζί', eur(b.contrib)], ['var(--c2)', 'Παίρνει ο κουρέας', b.mode === 'partner' ? '—' : eur(b.barberEarn)]]));
+    return `<div class="hb" data-tip="${tip}"><div class="nm"><span>${esc(b.name)} <span class="mode">${MODES[b.mode].label}</span></span><span class="small">${num(b.cuts)} πελάτες</span></div>
+      <div class="tr2"><div class="bar" style="width:${Math.abs(b.contrib) / mx * 75}%;background:${b.contrib >= 0 ? 'var(--c1)' : 'var(--neg)'}"></div><span class="v">${eur(b.contrib)}</span></div>
+      <div class="tr2"><div class="bar" style="width:${Math.max(0, b.barberEarn) / mx * 75}%;background:var(--c2)"></div><span class="v">${b.mode === 'partner' ? 'εταίρος' : eur(b.barberEarn)}</span></div></div>`;
+  }).join(''));
   const t = R.barbers.reduce((a, b) => ({ cuts: a.cuts + b.cuts, gross: a.gross + b.gross, contrib: a.contrib + b.contrib }), { cuts: 0, gross: 0, contrib: 0 });
   setHTML('bb-sum', `<table class="tbl"><tr><th>Κουρέας</th><th>Μοντέλο</th><th class="num">Πελάτες</th><th class="num">Τζίρος με ΦΠΑ</th><th class="num">Κόστος για μαγαζί</th><th class="num">Μένει στο μαγαζί</th></tr>
     ${R.barbers.map(b => `<tr><td>${esc(b.name)}</td><td>${MODES[b.mode].label}</td><td class="num">${num(b.cuts)}</td><td class="num">${eur(b.gross)}</td><td class="num">${eur(b.staff + b.consum + b.card)}</td><td class="num ${sgn(b.contrib)}">${eur(b.contrib)}</td></tr>`).join('')}
@@ -744,6 +991,13 @@ function rCapex() {
       </div>`).join('')}
       <button class="btn sec2" style="margin-top:10px" data-act="addCapex" data-cat="${esc(cat)}">+ Έξοδο</button>
     </div>`).join('')}
+    <div class="card"><h3>Κατανομή εξόδων έναρξης</h3><div id="cx-donut"></div></div>
+    <div class="card">
+      <h3>Χρηματοδότηση</h3>
+      <p class="small" style="margin-top:-6px">Προαιρετικά: δάνειο που μειώνει τα χρήματα που βάζουν οι εταίροι, και επιδότηση (π.χ. ΕΣΠΑ) που μπαίνει αργότερα. Οι τόκοι εκπίπτουν από τον φόρο.</p>
+      <div class="fields">${field('finance.loan', 'Ποσό δανείου', { suf: '€', step: 1000 })}${field('finance.rate', 'Επιτόκιο', { suf: '%/έτος', step: 0.25 })}${field('finance.years', 'Διάρκεια', { suf: 'έτη', step: 1 })}${field('finance.grant', 'Επιδότηση', { suf: '€', step: 1000 })}${field('finance.grantMonth', 'Μήνας είσπραξης', { step: 1, help: 'από την έναρξη' })}</div>
+      <div id="cx-fin" style="margin-top:10px"></div>
+    </div>
     <div class="card flat">
       <h3>Σύνολο</h3>
       <div id="cx-tot"></div>
@@ -752,13 +1006,20 @@ function rCapex() {
   </div>`;
 }
 function fCapex(R) {
-  const C = capexTotals(S, R);
+  const C = capexTotals(S, R), lp = loanPlan(S.finance);
   Object.values(C.cats).forEach((v, ci) => setHTML(`cx-cat-${ci}`, `<b>${eur(v)}</b>`));
   setHTML('cx-kpis', [['Έξοδα έναρξης', eur(C.items)], ['+ Απρόβλεπτα', eur(C.contingency)], ['+ Αποθεματικό', eur(C.reserve)], ['Απαιτούμενο κεφάλαιο', `<span style="color:var(--accent)">${eur(C.total)}</span>`]]
     .map(([l, v]) => `<div class="card kpi"><span>${l}</span><b>${v}</b></div>`).join(''));
   setHTML('cx-tot', Object.entries(C.cats).map(([k, v]) => row(esc(k), eur(v))).join('') +
     row('Σύνολο εξόδων', eur(C.items), 'sub') + row(`Απρόβλεπτα ${S.settings.contingencyPct}%`, eur(C.contingency)) +
-    row(`Αποθεματικό ${num1(S.settings.reserveMonths)} μηνών`, eur(C.reserve)) + row('Απαιτούμενο κεφάλαιο', eur(C.total), 'tot'));
+    row(`Αποθεματικό ${num1(S.settings.reserveMonths)} μηνών`, eur(C.reserve)) + row('Απαιτούμενο κεφάλαιο', eur(C.total), 'tot') +
+    (lp.L ? row('− Δάνειο', eur(lp.L)) + row('Βάζουν οι εταίροι', eur(Math.max(0, C.total - lp.L)), 'sub') : ''));
+  const cats = Object.entries(C.cats).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  const top = cats.slice(0, 7).map(([k, v], i) => ({ name: k, value: v, color: SER[i] }));
+  const rest = cats.slice(7).reduce((a, [, v]) => a + v, 0);
+  if (rest > 0) top.push({ name: 'Λοιπά', value: rest, color: SER[7] });
+  setHTML('cx-donut', donutBlock(top, { big: eur(C.items), small: 'χωρίς απρόβλεπτα' }));
+  setHTML('cx-fin', lp.L ? row('Μηνιαία δόση', eur(lp.pay)) + row('Σύνολο τόκων', eur(lp.pay * lp.N - lp.L)) + row('Δόση ως % του καθαρού κέρδους', R.net > 0 ? num(lp.pay / R.net * 100) + '%' : '—') : '<p class="small">Χωρίς δάνειο.</p>');
 }
 
 /* ---------- Fixed ---------- */
@@ -782,9 +1043,12 @@ function rFixed() {
 }
 function fFixed(R) {
   const c = R.cost;
-  const items = [['Μισθοί & αμοιβές κουρέων', c.staff, 'var(--c2)'], ['Μπαρίστα', c.barista, 'var(--c3)'], ['Πάγια', c.fixed, 'var(--c5)'], ['Αναλώσιμα', c.consum, 'var(--c4)'], ['Καφές & προϊόντα', c.coffee + c.retail, 'var(--c1)'], ['Προμήθειες καρτών', c.card, 'var(--c6)']];
-  const mx = Math.max(...items.map(x => x[1]), 1);
-  setHTML('fx-all', `<div class="bars">${items.map(([l, v, col]) => `<div class="b"><div class="bl"><span>${l}</span><b>${eur(v)}</b></div><div class="bt"><div class="bf" style="width:${v / mx * 100}%;background:${col}"></div></div></div>`).join('')}</div>` +
+  const items = [['Μισθοί & αμοιβές κουρέων', c.staff], ['Πάγια', c.fixed], ['Μπαρίστα', c.barista], ['Αναλώσιμα', c.consum], ['Καφές & προϊόντα', c.coffee + c.retail], ['Προμήθειες καρτών', c.card]]
+    .map(([name, value], i) => ({ name, value, color: SER[i] })).filter(x => x.value > 0.5);
+  const fx = S.fixed.map(x => ({ name: x.name, value: +x.amount || 0 })).sort((a, b) => b.value - a.value);
+  const fmx = Math.max(1, ...fx.map(x => x.value));
+  setHTML('fx-all', donutBlock(items, { big: eur(R.costs), small: 'έξοδα/μήνα' }) +
+    `<div class="sub2">Τα πάγια, από το μεγαλύτερο</div><div class="bars">${fx.map(x => `<div class="b" data-tip="${attr(tipHTML(esc(x.name), [['', 'Μήνας', eur(x.value)], ['', 'Έτος', eur(x.value * 12)]]))}"><div class="bl"><span>${esc(x.name)}</span><b>${eur(x.value)}</b></div><div class="bt"><div class="bf" style="width:${x.value / fmx * 100}%;background:var(--c2)"></div></div></div>`).join('')}</div>` +
     row('Σύνολο εξόδων/μήνα', eur(R.costs), 'tot') + row('Χωρίς καθόλου πελάτες (μισθοί + πάγια)', eur(R.cost.fixed + R.payrollBase)));
 }
 
@@ -802,17 +1066,32 @@ function rPartners() {
       <div id="pt-out-${i}"></div>
     </div>`).join('')}
     <button class="card" data-act="addPartner" style="border-style:dashed;color:var(--muted);min-height:120px;font-weight:600">+ Εταίρος</button>
-  </div>`;
+  </div>
+  <div class="card sec"><h3>Πότε παίρνει πίσω τα λεφτά του ο καθένας</h3><p class="small" style="margin-top:-6px">Σωρευτικά: μείον όσα έβαλε, συν το μερίδιό του από τα κέρδη (μετά φόρο μερισμάτων), αν μοιράζονται κάθε μήνα.</p><div id="pt-chart"></div></div>`;
 }
 function fPartners(R) {
   const C = capexTotals(S, R), CF = cashflow(S, C);
   const cs = S.partners.reduce((a, p) => a + (+p.capPct || 0), 0), ss = S.partners.reduce((a, p) => a + (+p.share || 0), 0);
   setHTML('pt-warn', (Math.round(cs) !== 100 || Math.round(ss) !== 100) ? `<div class="note warn">Τα ποσοστά πρέπει να αθροίζουν 100%. Κεφάλαιο: ${num1(cs)}%, κέρδη: ${num1(ss)}%.</div>` : '');
-  const y1 = CF.monthly.slice(0, 12).reduce((a, b) => a + b, 0) * (1 - S.settings.dividendTax / 100);
+  const dv = 1 - S.settings.dividendTax / 100, own = Math.max(0, C.total - CF.loan.L);
+  const dist = CF.monthly.map(v => v > 0 ? v * dv : v);
+  const y1 = dist.slice(0, 12).reduce((a, b) => a + b, 0);
+  const mFull = Math.max(0, R.net - CF.loan.pay) * dv;
+  const ser = S.partners.map((p, i) => {
+    const cap = own * (+p.capPct || 0) / 100; let c = -cap;
+    return { name: p.name, color: SER[i % 8], values: [c, ...dist.map(v => (c += v * (+p.share || 0) / 100))] };
+  });
+  const w = cw('pt-chart'), H = CF.H, step = w < 600 ? 12 : 6, ticks = [];
+  for (let i = 0; i <= H; i += step) ticks.push(i);
+  setHTML('pt-chart', legend(ser.map(x => [x.color, esc(x.name)])) + lineChart({
+    w, n: H + 1, series: ser, ticks, xLabel: i => i === 0 ? 'Έναρξη' : i + 'ος', label: 'Σωρευτική θέση κάθε εταίρου',
+    tip: i => tipHTML(i === 0 ? 'Έναρξη' : monthName(i), ser.map(x => [x.color, esc(x.name), eur(x.values[i])]))
+  }));
   S.partners.forEach((p, i) => {
-    const cap = C.total * (+p.capPct || 0) / 100, m = R.dist * (+p.share || 0) / 100;
-    const pb = cap > 0 && m > 0 ? cap / m : null;
-    setHTML(`pt-out-${i}`, `${row('Ποσό κεφαλαίου', eur(cap))}${row('Μερίδιο/μήνα (πλήρης λειτουργία)', `<span class="${sgn(m)}">${eur(m)}</span>`)}${row('Μερίδιο 1ου έτους', eur(y1 * (+p.share || 0) / 100))}${row('Μερίδιο/έτος μετά', eur(m * 12), 'sub')}${row('Επιστροφή του ποσού του', pb ? `~${num1(pb)} μήνες` : '—')}`);
+    const cap = own * (+p.capPct || 0) / 100, m = mFull * (+p.share || 0) / 100;
+    const zi = ser[i].values.findIndex((v, k) => k > 0 && v >= 0);
+    const pb = cap > 0 ? (zi > 0 ? zi : null) : null;
+    setHTML(`pt-out-${i}`, `${row('Ποσό κεφαλαίου', eur(cap))}${row('Μερίδιο/μήνα (πλήρης λειτουργία)', `<span class="${sgn(m)}">${eur(m)}</span>`)}${row('Μερίδιο 1ου έτους', eur(y1 * (+p.share || 0) / 100))}${row('Μερίδιο/έτος μετά', eur(m * 12), 'sub')}${row('Παίρνει πίσω τα λεφτά του', cap > 0 ? (pb ? `τον ${pb}ο μήνα` : `μετά τους ${H} μήνες`) : '—')}`);
   });
 }
 
@@ -828,7 +1107,10 @@ function rSettings() {
       ${field('settings.consumablePerCut', 'Αναλώσιμα/κούρεμα', { suf: '€', step: 0.1 })}
       ${field('settings.rampStart', 'Πελατεία 1ου μήνα', { suf: '%', step: 5 })}
       ${field('settings.rampMonths', 'Μήνες ως πλήρη πελατεία', { step: 1 })}
-      ${field('settings.horizon', 'Ορίζοντας γραφήματος', { suf: 'μήνες', step: 6 })}
+      ${field('settings.horizon', 'Ορίζοντας γραφήματος', { suf: 'μήνες', step: 12 })}
+      ${field('settings.priceGrowth', 'Αύξηση τιμών', { suf: '%/έτος', step: 0.5 })}
+      ${field('settings.wageGrowth', 'Αύξηση μισθών', { suf: '%/έτος', step: 0.5, help: 'Κατώτατος → ~1.000 € ως το 2028' })}
+      ${field('settings.costGrowth', 'Αύξηση παγίων', { suf: '%/έτος', step: 0.5 })}
     </div></div>
     <div class="card"><h3>Φόροι & εισφορές</h3><div class="fields">
       ${field('settings.vatServices', 'ΦΠΑ κουρέματος', { suf: '%', step: 1 })}
@@ -843,7 +1125,6 @@ function rSettings() {
     </div></div>
     <div class="card"><h3>Σενάρια</h3>
       <p class="small" style="margin-top:-6px">Όλες οι αλλαγές και τα σενάρια αποθηκεύονται αυτόματα και είναι κοινά για όλους τους εταίρους (κρυπτογραφημένα με τον κωδικό). Η «Επαναφορά αρχικών» αλλάζει τα νούμερα για όλους.</p>
-      <label class="f" style="margin-bottom:10px"><span>Το όνομά μου (φαίνεται ποιος έκανε την τελευταία αλλαγή)</span><div class="inp"><input id="whoName" value="${esc(who())}" placeholder="π.χ. Θωμάς"></div></label>
       <div class="btns"><input class="txt" id="scnName" placeholder="Όνομα σεναρίου" style="flex:1;min-width:140px;border-color:var(--line);margin:0"><button class="btn" data-act="saveScn">Αποθήκευση</button></div>
       <div style="margin-top:8px">${Object.keys(sc).length ? Object.keys(sc).map(n => `<div class="scn"><span>${esc(n)}</span><span class="btns"><button class="btn sec2" data-act="loadScn" data-n="${esc(n)}">Φόρτωση</button><button class="x" data-act="delScn" data-n="${esc(n)}">×</button></span></div>`).join('') : '<p class="small">Κανένα αποθηκευμένο σενάριο.</p>'}</div>
       <div class="btns" style="margin-top:12px"><button class="btn sec2" data-act="importCsvBtn">Εισαγωγή CSV</button><button class="btn sec2" data-act="exportCsv">Εξαγωγή CSV</button><button class="btn sec2" data-act="export">Εξαγωγή JSON</button><button class="btn sec2" data-act="import">Εισαγωγή JSON</button><button class="btn sec2" data-act="print">Εκτύπωση</button><button class="btn sec2" data-act="reset" style="color:var(--neg)">Επαναφορά αρχικών</button></div>
@@ -996,30 +1277,33 @@ async function importCsvFile(f) {
 }
 
 /* =========================================================
-   SHARED SYNC (Supabase) — state is encrypted in the browser
-   with a key derived from the site password; the server only
-   stores ciphertext and checks a write token.
+   SHARED SYNC (Supabase)
+   State is encrypted in the browser with DATA_KEY (baked into the
+   encrypted app). Each user has a personal write token; the server
+   checks sha256(token), so it knows who saved what (history).
    ========================================================= */
 const SYNC_URL = 'https://miaaynxgowqyyivtdnhs.supabase.co';
 const SYNC_KEY = 'sb_publishable_6xYzhezNfoXDbCQ1GKzupA_bQcuel3X';
-const sync = { on: false, key: null, token: null, version: null, timer: null, pending: false, saving: false, state: 'local', by: '', at: null };
-const who = () => ls.get(LS_WHO) || '';
+const DATA_KEY = '__BARBER_DATA_KEY__';
+const AUTH = window.__barber || null;
+const sync = { on: false, key: null, version: null, timer: null, pending: false, saving: false, state: 'local', by: '', at: null, base: null, note: '' };
+const who = () => (AUTH && AUTH.user) || '';
 const b64e = u => btoa(String.fromCharCode(...new Uint8Array(u)));
 const b64d = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const fmtTime = t => t ? new Date(t).toLocaleString('el-GR', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
 
 function setSync(st) {
   sync.state = st;
-  const t = sync.at ? new Date(sync.at).toLocaleString('el-GR', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
   const map = {
     local: ['var(--muted)', 'μόνο σε αυτή τη συσκευή'],
-    ok: ['var(--pos)', `κοινό · ${t}${sync.by ? ' · ' + sync.by : ''}`],
+    ok: ['var(--pos)', `${who() ? who() + ' · ' : ''}τελευταία αλλαγή ${fmtTime(sync.at)}${sync.by ? ' (' + sync.by + ')' : ''}`],
     pending: ['var(--accent)', 'αποθήκευση…'],
     err: ['var(--neg)', 'χωρίς σύνδεση — οι αλλαγές μένουν τοπικά'],
-    denied: ['var(--neg)', 'ο κωδικός δεν επιτρέπει αποθήκευση']
+    denied: ['var(--neg)', 'ο κωδικός σου δεν επιτρέπει αποθήκευση']
   };
   const [c, txt] = map[st] || map.local;
   const el = $('subtitle');
-  if (el) el.innerHTML = `Καλαμάτα · <span style="color:${c}">●</span> ${esc(txt)}`;
+  if (el) el.innerHTML = `<span style="color:${c}">●</span> ${esc(txt)}`;
 }
 async function rpc(fn, body) {
   const r = await fetch(`${SYNC_URL}/rest/v1/rpc/${fn}`, { method: 'POST', headers: { apikey: SYNC_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
@@ -1037,16 +1321,16 @@ async function decryptObj(s) {
   const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64d(p.i) }, sync.key, b64d(p.c));
   return JSON.parse(new TextDecoder().decode(pt));
 }
+const snapshot = () => ({ state: clone(S), scenarios: scenarios() });
+
 async function syncInit() {
-  const pw = window.__barberPw;
-  if (!pw || !window.crypto || !crypto.subtle) { setSync('local'); return; }
+  if (!AUTH || !AUTH.token || !/^[0-9a-f]{64}$/.test(DATA_KEY) || !window.crypto || !crypto.subtle) { setSync('local'); return; }
   setSync('pending');
   try {
-    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']);
-    const bits = new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: new TextEncoder().encode('barber-sync-v1'), iterations: 600000, hash: 'SHA-256' }, base, 512));
-    sync.key = await crypto.subtle.importKey('raw', bits.slice(0, 32), 'AES-GCM', false, ['encrypt', 'decrypt']);
-    sync.token = [...bits.slice(32)].map(b => b.toString(16).padStart(2, '0')).join('');
+    const raw = Uint8Array.from(DATA_KEY.match(/../g).map(h => parseInt(h, 16)));
+    sync.key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
     sync.on = true;
+    rpc('barber_login', { p_token: AUTH.token }).catch(e => { if (e.status === 403 || /forbidden/.test(e.message)) setSync('denied'); });
     await pull({ initial: true });
     setInterval(() => { if (!document.hidden) pull({}); }, 20000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) pull({}); });
@@ -1056,38 +1340,44 @@ async function pull({ initial = false, force = false }) {
   if (!sync.on || (!force && (sync.pending || sync.saving))) return;
   try {
     const r = await rpc('barber_load');
-    if (!r) { if (initial) await push(); else setSync('ok'); return; }
-    if (r.version === sync.version) { setSync('ok'); return; }
+    if (!r) { if (initial) { sync.base = { state: clone(DEFAULTS), scenarios: {} }; sync.note = 'Πρώτη αποθήκευση'; await push(); } else setSync('ok'); return; }
+    if (r.version === sync.version) { if (sync.state !== 'denied') setSync('ok'); return; }
     let o;
     try { o = await decryptObj(r.data); }
-    catch (e) { // stored with an older password: replace it with this device's data
-      if (initial) { sync.version = r.version; await push(); }
-      return;
-    }
+    catch (e) { console.error('cannot decrypt shared state', e); setSync('err'); return; }
     const editing = document.activeElement && document.activeElement.matches('#view input, #view select');
-    if (!initial && !force && editing) return; // try again on next poll, don't steal focus
+    if (!initial && !force && editing) return; // retry on next poll, don't steal focus
     sync.version = r.version; sync.by = r.updated_by || ''; sync.at = r.updated_at;
     S = hydrate(o.state);
     ls.set(LS_KEY, JSON.stringify(S));
-    if (o.scenarios) ls.set(LS_SCN, JSON.stringify(o.scenarios));
+    ls.set(LS_SCN, JSON.stringify(o.scenarios || {}));
+    sync.base = snapshot();
     renderView();
     setSync('ok');
-    if (!initial) toast(`Νέα έκδοση${sync.by ? ' από ' + sync.by : ''}`);
+    if (!initial && sync.by && sync.by !== who()) toast(`Νέα έκδοση από ${sync.by}`);
   } catch (e) { console.error(e); setSync('err'); }
 }
 function schedulePush() {
   if (!sync.on) return;
   sync.pending = true; setSync('pending');
   clearTimeout(sync.timer);
-  sync.timer = setTimeout(push, 1200);
+  sync.timer = setTimeout(push, 1500);
 }
 async function push() {
-  sync.pending = false; sync.saving = true;
+  sync.pending = false;
+  const snap = snapshot();
+  const changes = (sync.note ? [sync.note] : []).concat(sync.base ? diffStates(sync.base, snap) : []);
+  if (!changes.length && sync.version != null) { setSync('ok'); return; }
+  sync.saving = true;
   try {
-    const data = await encryptObj({ state: S, scenarios: scenarios() });
-    const r = await rpc('barber_save', { p_token: sync.token, p_data: data, p_version: sync.version, p_by: who() || 'Χωρίς όνομα' });
-    if (r && r.ok) { sync.version = r.version; sync.by = who() || 'Χωρίς όνομα'; sync.at = new Date().toISOString(); setSync('ok'); }
-    else if (r && r.conflict) {
+    const data = await encryptObj(snap);
+    const log = await encryptObj({ changes });
+    const r = await rpc('barber_save', { p_token: AUTH.token, p_data: data, p_version: sync.version, p_log: log });
+    if (r && r.ok) {
+      sync.version = r.version; sync.by = r.user || who(); sync.at = new Date().toISOString(); sync.base = snap; sync.note = '';
+      setSync('ok');
+      if (TAB === 'history') loadHistory();
+    } else if (r && r.conflict) {
       sync.saving = false;
       toast('Κάποιος άλλος άλλαξε κάτι ταυτόχρονα — φορτώθηκε η δική του έκδοση');
       await pull({ force: true });
@@ -1097,8 +1387,98 @@ async function push() {
     setSync(e.status === 403 || /forbidden|42501/.test(e.message) ? 'denied' : 'err');
   } finally {
     sync.saving = false;
-    if (sync.pending) { clearTimeout(sync.timer); sync.timer = setTimeout(push, 1200); }
+    if (sync.pending) { clearTimeout(sync.timer); sync.timer = setTimeout(push, 1500); }
   }
+}
+
+/* ---------- human-readable diff for the history ---------- */
+const SEC_LABEL = { barbers: 'Κουρέας', services: 'Υπηρεσία', capex: 'Έξοδο έναρξης', fixed: 'Πάγιο', partners: 'Εταίρος', settings: 'Παραδοχές', barista: 'Μπαρίστα/καφές', retail: 'Λιανική', finance: 'Χρηματοδότηση' };
+const F_LABEL = {
+  cutsPerDay: 'κουρέματα/ημέρα', salary: 'μισθός', bonusPct: 'bonus %', rent: 'ενοίκιο θέσης', barberPct: 'ποσοστό κουρέα', ticket: 'μέση τιμή', mode: 'μοντέλο',
+  name: 'όνομα', amount: 'ποσό', on: 'ενεργό', price: 'τιμή', mix: '% πελατών', capPct: '% κεφαλαίου', share: '% κερδών', role: 'ρόλος', note: 'σημείωση', cat: 'κατηγορία',
+  enabled: 'μπαρίστα', fte: 'απασχόληση %', coffeeMode: 'καφές', cupsPerDay: 'καφέδες/ημέρα', takeRate: '% που παίρνουν καφέ', costPerCup: 'κόστος/καφέ', sales: 'πωλήσεις', margin: 'περιθώριο %',
+  loan: 'δάνειο', rate: 'επιτόκιο', years: 'διάρκεια (έτη)', grant: 'επιδότηση', grantMonth: 'μήνας επιδότησης',
+  daysPerMonth: 'ημέρες/μήνα', vatServices: 'ΦΠΑ κουρέματος', vatCoffee: 'ΦΠΑ καφέ', vatProducts: 'ΦΠΑ προϊόντων', employerRate: 'εργοδοτικές εισφορές', salaryMonths: 'μισθοί/έτος',
+  cardShare: '% με κάρτα', cardFee: 'προμήθεια POS', consumablePerCut: 'αναλώσιμα/κούρεμα', corpTax: 'φόρος εταιρείας', dividendTax: 'φόρος μερισμάτων', rampMonths: 'μήνες ως πλήρη πελατεία',
+  rampStart: 'πελατεία 1ου μήνα', reserveMonths: 'αποθεματικό (μήνες)', contingencyPct: 'απρόβλεπτα %', horizon: 'ορίζοντας', priceGrowth: 'αύξηση τιμών', wageGrowth: 'αύξηση μισθών', costGrowth: 'αύξηση παγίων'
+};
+function fmtV(k, v) {
+  if (typeof v === 'boolean') return v ? 'ναι' : 'όχι';
+  if (k === 'mode') return (MODES[v] || {}).label || v;
+  if (k === 'coffeeMode') return { free: 'κερασμένος', paid: 'πωλείται', none: 'χωρίς' }[v] || v;
+  if (typeof v === 'number') return num1(v);
+  return `«${v ?? ''}»`;
+}
+function diffStates(a, b) {
+  const out = [], A = a.state, B = b.state;
+  ['barbers', 'services', 'capex', 'fixed', 'partners'].forEach(sec => {
+    const xa = A[sec] || [], xb = B[sec] || [], L = SEC_LABEL[sec];
+    const fieldDiff = (p, q) => Object.keys(Object.assign({}, p, q)).forEach(k => {
+      if (k !== 'name' && JSON.stringify(p[k]) !== JSON.stringify(q[k])) out.push(`${L} «${q.name}»: ${F_LABEL[k] || k} ${fmtV(k, p[k])} → ${fmtV(k, q[k])}`);
+    });
+    if (xa.length === xb.length) {
+      xa.forEach((p, i) => { const q = xb[i]; if (p.name !== q.name) out.push(`${L}: μετονομασία «${p.name}» → «${q.name}»`); fieldDiff(p, q); });
+    } else {
+      const ka = new Map(xa.map(x => [x.name, x])), kb = new Map(xb.map(x => [x.name, x]));
+      xb.forEach(q => { if (!ka.has(q.name)) out.push(`+ ${L}: «${q.name}»`); else fieldDiff(ka.get(q.name), q); });
+      xa.forEach(p => { if (!kb.has(p.name)) out.push(`− ${L}: «${p.name}»`); });
+    }
+  });
+  ['settings', 'barista', 'retail', 'finance'].forEach(sec => {
+    const p = A[sec] || {}, q = B[sec] || {};
+    Object.keys(q).forEach(k => { if (JSON.stringify(p[k]) !== JSON.stringify(q[k])) out.push(`${SEC_LABEL[sec]}: ${F_LABEL[k] || k} ${fmtV(k, p[k])} → ${fmtV(k, q[k])}`); });
+  });
+  if (!!A.locked !== !!B.locked) out.push(B.locked ? 'Κλείδωσε τα νούμερα' : 'Ξεκλείδωσε τα νούμερα');
+  const sa = Object.keys(a.scenarios || {}), sb = Object.keys(b.scenarios || {});
+  sb.filter(n => !sa.includes(n)).forEach(n => out.push(`+ Σενάριο «${n}»`));
+  sa.filter(n => !sb.includes(n)).forEach(n => out.push(`− Σενάριο «${n}»`));
+  return out;
+}
+
+/* ---------- History tab ---------- */
+function rHistory() {
+  return `
+  <h2>Ιστορικό</h2>
+  <p class="lead">Ποιος άλλαξε τι και πότε, και ποιος συνδέθηκε. Κάθε αλλαγή κρατά ολόκληρη την έκδοση· μπορείς να γυρίσεις σε όποια θέλεις.</p>
+  <div class="btns" style="margin-bottom:12px"><label class="chk"><input type="checkbox" id="histLogins"${ls.get('barber.histLogins') === '0' ? '' : ' checked'}> Δείξε και τις συνδέσεις</label><button class="btn sec2" data-act="histReload">Ανανέωση</button></div>
+  <div id="hist">${sync.on ? '<p class="small">Φόρτωση…</p>' : '<p class="small">Το ιστορικό είναι διαθέσιμο μόνο στη δημοσιευμένη σελίδα με κωδικό.</p>'}</div>`;
+}
+let histSeq = 0;
+async function loadHistory() {
+  if (!sync.on || !$('hist')) return;
+  const my = ++histSeq;
+  try {
+    const rows = await rpc('barber_log_list', { p_token: AUTH.token, p_limit: 200 });
+    const logins = ls.get('barber.histLogins') !== '0';
+    const items = [];
+    for (const r of rows) {
+      if (r.kind === 'login' && !logins) continue;
+      let ch = [];
+      if (r.kind === 'change' && r.summary) { try { ch = (await decryptObj(r.summary)).changes || []; } catch (e) { ch = ['(δεν διαβάζεται)']; } }
+      items.push({ r, ch });
+    }
+    if (my !== histSeq || !$('hist')) return;
+    const byDay = {};
+    items.forEach(it => { const d = new Date(it.r.at).toLocaleDateString('el-GR', { weekday: 'long', day: 'numeric', month: 'long' }); (byDay[d] = byDay[d] || []).push(it); });
+    $('hist').innerHTML = items.length ? Object.entries(byDay).map(([d, list]) => `<div class="card" style="margin-bottom:12px"><h3 style="text-transform:capitalize">${esc(d)}</h3>${list.map(({ r, ch }) => `
+      <div class="hrow ${r.kind}">
+        <div class="hmeta"><b>${esc(r.user_name)}</b><span class="small">${new Date(r.at).toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' })}</span></div>
+        ${r.kind === 'login' ? '<div class="small">συνδέθηκε</div>' : `<ul class="hch">${ch.slice(0, 12).map(c => `<li>${esc(c)}</li>`).join('')}${ch.length > 12 ? `<li class="small">και ${ch.length - 12} ακόμα</li>` : ''}</ul>
+        ${r.has_snapshot ? `<button class="btn sec2 hbtn" data-act="restore" data-id="${r.id}" data-at="${esc(r.at)}">Επαναφορά σε αυτή την έκδοση</button>` : ''}`}
+      </div>`).join('')}</div>`).join('') : '<p class="small">Κανένα συμβάν ακόμα.</p>';
+  } catch (e) { console.error(e); if ($('hist')) $('hist').innerHTML = '<p class="small neg">Δεν φορτώθηκε το ιστορικό.</p>'; }
+}
+async function restoreVersion(id, at) {
+  if (S.locked) { toast('Κλειδωμένο — πάτα «Ξεκλείδωμα»'); return; }
+  if (!confirm(`Επαναφορά όλων των νούμερων στην έκδοση της ${fmtTime(at)}; Θα ισχύσει για όλους.`)) return;
+  try {
+    const r = await rpc('barber_log_get', { p_token: AUTH.token, p_id: +id });
+    const o = await decryptObj(r.snapshot);
+    S = hydrate(o.state);
+    ls.set(LS_SCN, JSON.stringify(o.scenarios || {}));
+    sync.note = `Επαναφορά στην έκδοση της ${fmtTime(at)} (${r.user_name})`;
+    save(); renderView(); toast('Έγινε επαναφορά');
+  } catch (e) { console.error(e); toast('Η επαναφορά απέτυχε'); }
 }
 
 /* =========================================================
@@ -1111,6 +1491,7 @@ const LOCK_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" str
 function renderView() {
   if (!TABS[TAB]) TAB = 'overview';
   renderTabs();
+  setTimeout(() => { if (TAB === 'history') loadHistory(); }, 0);
   $('view').innerHTML = (S.locked ? `<div class="lockbar"><span>${LOCK_SVG}Κλειδωμένο — τα νούμερα δεν αλλάζουν.</span><button class="btn sec2" data-act="lock">Ξεκλείδωμα</button></div>` : '') + TABS[TAB].render();
   document.body.classList.toggle('locked', !!S.locked);
   if (S.locked) $('view').querySelectorAll('[data-k]').forEach(e => { e.disabled = true; });
@@ -1119,7 +1500,10 @@ function renderView() {
   lb.classList.toggle('on', !!S.locked);
   refresh();
 }
+let rfq = 0;
+function refreshSoon() { if (rfq) return; rfq = requestAnimationFrame(() => { rfq = 0; refresh(); }); }
 function refresh() {
+  CHARTS.clear(); chartSeq = 0; hideTip();
   const R = compute(S), C = capexTotals(S, R), CF = cashflow(S, C);
   $('strip').innerHTML = [
     ['Καθαρό/μήνα', `<span class="${sgn(R.net)}">${eur(R.net)}</span>`],
@@ -1132,7 +1516,7 @@ function refresh() {
 }
 
 document.addEventListener('input', e => {
-  if (e.target.id === 'whoName') { ls.set(LS_WHO, e.target.value.trim()); return; }
+  if (e.target.id === 'histLogins') { ls.set('barber.histLogins', e.target.checked ? '1' : '0'); loadHistory(); return; }
   const el = e.target.closest('[data-k]');
   if (!el || S.locked) return;
   const t = el.dataset.t;
@@ -1143,7 +1527,7 @@ document.addEventListener('input', e => {
   setPath(S, el.dataset.k, v);
   save();
   document.querySelectorAll(`[data-k="${el.dataset.k}"]`).forEach(o => { if (o !== el) { if (o.type === 'checkbox') o.checked = v; else o.value = v; } });
-  if (el.hasAttribute('data-rr')) renderView(); else refresh();
+  if (el.hasAttribute('data-rr')) renderView(); else refreshSoon();
 });
 
 const blankBarber = n => ({ name: `Κουρέας ${n}`, mode: 'salary', cutsPerDay: 8, ticket: 0, salary: 1100, bonusPct: 0, rent: 400, barberPct: 50 });
@@ -1152,6 +1536,8 @@ const ACTIONS = {
     if (S.locked && !confirm('Ξεκλείδωμα; Οι αλλαγές θα φαίνονται σε όλους τους εταίρους.')) return false;
     S.locked = !S.locked; toast(S.locked ? 'Κλειδώθηκε για όλους' : 'Ξεκλειδώθηκε');
   },
+  histReload: () => { loadHistory(); return false; },
+  restore: d => { restoreVersion(d.id, d.at); return false; },
   tab: d => { TAB = d.tab; ls.set(LS_TAB, TAB); renderView(); window.scrollTo({ top: 0 }); },
   addBarber: () => { S.barbers.push(blankBarber(S.barbers.length + 1)); },
   delBarber: d => { if (confirm(`Αφαίρεση «${S.barbers[d.i].name}»;`)) S.barbers.splice(+d.i, 1); },
