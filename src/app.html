@@ -250,6 +250,7 @@ body.play header.top::before{content:"";display:block;height:4px;background:var(
 .ot[open] summary{color:var(--ink)}
 #refreshBtn.spin svg{animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+.grantbox{margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--surface2)}
 @media print{header.top nav,.hbtns,.x,.btn{display:none!important} header.top{position:static}}
 </style>
 </head>
@@ -306,7 +307,7 @@ const DEFAULTS = {
     goalNet: 0,            // καρτέλα «Ελάχιστα»: ελάχιστο καθαρό που θέλουμε/μήνα
     overtimePremium: 40    // προσαύξηση υπερωρίας % (20% υπερεργασία 41–45 ώρες, 40% νόμιμη υπερωρία)
   },
-  finance: { loan: 0, rate: 6.5, years: 5, grant: 0, grantMonth: 12 },
+  finance: { loan: 0, rate: 6.5, years: 5, grantOn: false, grant: 0, grantMonth: 12, grantNonRepay: true, grantRepayYears: 5, grantGrace: 12 },
   services: [
     { name: 'Κούρεμα', price: 15, mix: 55 },
     { name: 'Κούρεμα + γένια', price: 22, mix: 28 },
@@ -622,12 +623,17 @@ function cashflow(s, C) {
     const preTax = R.preTax - interest;
     const tax = Math.max(0, preTax) * st.corpTax / 100;
     const net = preTax - tax;
-    const grant = (+F.grant > 0 && m === (+F.grantMonth || 1)) ? +F.grant : 0;
-    const cash = net - principal + grant;
+    const gOn = !!F.grantOn && +F.grant > 0, gm = +F.grantMonth || 1;
+    const grant = (gOn && m === gm) ? +F.grant : 0;
+    // επιστρεπτέα επιδότηση: ίσες μηνιαίες δόσεις χωρίς τόκο, μετά την περίοδο χάριτος
+    const gN = Math.max(1, Math.round((+F.grantRepayYears || 0) * 12)), gStart = gm + Math.max(0, +F.grantGrace || 0) + 1;
+    const grantRepay = (gOn && F.grantNonRepay === false && m >= gStart && m < gStart + gN) ? +F.grant / gN : 0;
+    const cash = net - principal + grant - grantRepay;
     c += cash; cum.push(c); monthly.push(cash);
     if (c < min) min = c;
     if (payback === null && c >= 0 && start < 0) payback = m;
-    const Y = years[y] = years[y] || { rev: 0, gross: 0, costs: 0, preTax: 0, tax: 0, net: 0, loan: 0, grant: 0, cash: 0, clients: 0 };
+    const Y = years[y] = years[y] || { rev: 0, gross: 0, costs: 0, preTax: 0, tax: 0, net: 0, loan: 0, grant: 0, grantRepay: 0, cash: 0, clients: 0 };
+    Y.grantRepay += grantRepay;
     Y.rev += R.revenue; Y.gross += R.grossReceipts; Y.costs += R.costs + interest; Y.preTax += preTax; Y.tax += tax; Y.net += net;
     Y.loan += interest + principal; Y.grant += grant; Y.cash += cash; Y.clients += R.clients; Y.end = c;
   }
@@ -924,7 +930,8 @@ function fOverview(R) {
     <tr><td>Φόρος</td>${Y.map(y => `<td>−${eur(y.tax)}</td>`).join('')}</tr>
     <tr style="font-weight:700"><td>Καθαρό κέρδος</td>${Y.map(y => `<td class="${sgn(y.net)}">${eur(y.net)}</td>`).join('')}</tr>
     ${lp.L ? `<tr><td>Δόσεις δανείου</td>${Y.map(y => `<td>−${eur(y.loan)}</td>`).join('')}</tr>` : ''}
-    ${Y.some(y => y.grant) ? `<tr><td>Επιδότηση</td>${Y.map(y => `<td>${y.grant ? eur(y.grant) : '—'}</td>`).join('')}</tr>` : ''}
+    ${Y.some(y => y.grant) ? `<tr><td>Επιδότηση${S.finance.grantNonRepay === false ? '' : ' (δεν επιστρέφεται)'}</td>${Y.map(y => `<td>${y.grant ? eur(y.grant) : '—'}</td>`).join('')}</tr>` : ''}
+    ${Y.some(y => y.grantRepay) ? `<tr><td>Επιστροφή επιδότησης</td>${Y.map(y => `<td>${y.grantRepay ? '−' + eur(y.grantRepay) : '—'}</td>`).join('')}</tr>` : ''}
     <tr><td>Ταμείο τέλος έτους</td>${Y.map(y => `<td class="${sgn(y.end)}">${eur(y.end)}</td>`).join('')}</tr></table>`);
 
   // donut: where revenue goes
@@ -1281,7 +1288,13 @@ function rCapex() {
     <div class="card">
       <h3>Χρηματοδότηση</h3>
       <p class="small" style="margin-top:-6px">Προαιρετικά: δάνειο που μειώνει τα χρήματα που βάζουν οι εταίροι, και επιδότηση (π.χ. ΕΣΠΑ) που μπαίνει αργότερα. Οι τόκοι εκπίπτουν από τον φόρο.</p>
-      <div class="fields">${field('finance.loan', 'Ποσό δανείου', { suf: '€', step: 1000 })}${field('finance.rate', 'Επιτόκιο', { suf: '%/έτος', step: 0.25 })}${field('finance.years', 'Διάρκεια', { suf: 'έτη', step: 1 })}${field('finance.grant', 'Επιδότηση', { suf: '€', step: 1000 })}${field('finance.grantMonth', 'Μήνας είσπραξης', { step: 1, help: 'από την έναρξη' })}</div>
+      <div class="fields">${field('finance.loan', 'Ποσό δανείου', { suf: '€', step: 1000 })}${field('finance.rate', 'Επιτόκιο', { suf: '%/έτος', step: 0.25 })}${field('finance.years', 'Διάρκεια', { suf: 'έτη', step: 1 })}</div>
+      <div class="grantbox">
+        ${check('finance.grantOn', '<b>Επιδότηση</b> (ΕΣΠΑ, ΔΥΠΑ, νέοι επιχειρηματίες κ.λπ.)', true)}
+        ${S.finance.grantOn ? `<div class="fields" style="margin-top:8px">${field('finance.grant', 'Ποσό επιδότησης', { suf: '€', step: 1000 })}${field('finance.grantMonth', 'Μήνας είσπραξης', { step: 1, help: 'από την έναρξη' })}</div>
+        <div style="margin-top:8px">${check('finance.grantNonRepay', 'Δεν επιστρέφεται στο κράτος (μη επιστρεπτέα)', true)}</div>
+        ${S.finance.grantNonRepay === false ? `<div class="fields" style="margin-top:8px">${field('finance.grantGrace', 'Περίοδος χάριτος', { suf: 'μήνες', step: 1, help: 'πριν αρχίσει η επιστροφή' })}${field('finance.grantRepayYears', 'Επιστροφή σε', { suf: 'έτη', step: 1, help: 'ίσες μηνιαίες δόσεις, χωρίς τόκο' })}</div>` : ''}` : ''}
+      </div>
       <div id="cx-fin" style="margin-top:10px"></div>
     </div>
     <div class="card flat">
@@ -1305,7 +1318,12 @@ function fCapex(R) {
   const rest = cats.slice(7).reduce((a, [, v]) => a + v, 0);
   if (rest > 0) top.push({ name: 'Λοιπά', value: rest, color: SER[7] });
   setHTML('cx-donut', donutBlock(top, { big: eur(C.items), small: 'χωρίς απρόβλεπτα' }));
-  setHTML('cx-fin', lp.L ? row('Μηνιαία δόση', eur(lp.pay)) + row('Σύνολο τόκων', eur(lp.pay * lp.N - lp.L)) + row('Δόση ως % του καθαρού κέρδους', R.net > 0 ? num(lp.pay / R.net * 100) + '%' : '—') : '<p class="small">Χωρίς δάνειο.</p>');
+  const F = S.finance, gOn = !!F.grantOn && +F.grant > 0;
+  const gN = Math.max(1, Math.round((+F.grantRepayYears || 0) * 12));
+  setHTML('cx-fin', (lp.L ? row('Μηνιαία δόση δανείου', eur(lp.pay)) + row('Σύνολο τόκων', eur(lp.pay * lp.N - lp.L)) + row('Δόση ως % του καθαρού κέρδους', R.net > 0 ? num(lp.pay / R.net * 100) + '%' : '—') : '<p class="small">Χωρίς δάνειο.</p>') +
+    (gOn ? row(`Επιδότηση τον ${num(F.grantMonth)}ο μήνα`, '+' + eur(F.grant)) + (F.grantNonRepay === false
+      ? row(`Επιστροφή: ${num(gN)} δόσεις από τον ${num((+F.grantMonth || 1) + (+F.grantGrace || 0) + 1)}ο μήνα`, '−' + eur(F.grant / gN) + '/μήνα')
+      : row('Επιστροφή στο κράτος', '<span class="pos">καμία</span>')) : ''));
 }
 
 /* ---------- Fixed ---------- */
@@ -1685,7 +1703,7 @@ const F_LABEL = {
   cutsPerDay: 'κουρέματα/ημέρα', salary: 'μισθός', bonusPct: 'bonus %', rent: 'ενοίκιο θέσης', barberPct: 'ποσοστό κουρέα', turnPct: '% επί τζίρου', otHours: 'ώρες υπερωρίας/μήνα', otUnit: 'υπερωρίες μετρούνται', otHoursDay: 'ώρες υπερωρίας/ημέρα', otDays: 'ημέρες με υπερωρία', otCutsPerHour: 'κουρέματα/ώρα υπερωρίας', otRate: 'κόστος ώρας υπερωρίας', overtimePremium: 'προσαύξηση υπερωρίας', turnBase: 'τζίρος από', ticket: 'μέση τιμή', mode: 'μοντέλο',
   name: 'όνομα', amount: 'ποσό', qty: 'τεμάχια', unit: 'τιμή τεμαχίου', on: 'ενεργό', price: 'τιμή', mix: '% πελατών', capPct: '% κεφαλαίου', share: '% κερδών', role: 'ρόλος', note: 'σημείωση', cat: 'κατηγορία',
   enabled: 'μπαρίστα', fte: 'απασχόληση %', coffeeMode: 'καφές', cupsPerDay: 'καφέδες/ημέρα', takeRate: '% που παίρνουν καφέ', freeAll: 'δωρεάν καφές σε όλους τους πελάτες', costPerCup: 'κόστος/καφέ', sales: 'πωλήσεις', margin: 'περιθώριο %',
-  loan: 'δάνειο', rate: 'επιτόκιο', years: 'διάρκεια (έτη)', grant: 'επιδότηση', grantMonth: 'μήνας επιδότησης',
+  loan: 'δάνειο', rate: 'επιτόκιο', years: 'διάρκεια (έτη)', grant: 'επιδότηση', grantMonth: 'μήνας επιδότησης', grantOn: 'επιδότηση ενεργή', grantNonRepay: 'επιδότηση μη επιστρεπτέα', grantRepayYears: 'επιστροφή επιδότησης (έτη)', grantGrace: 'χάριτος επιδότησης (μήνες)',
   daysPerMonth: 'ημέρες/μήνα', vatServices: 'ΦΠΑ κουρέματος', vatCoffee: 'ΦΠΑ καφέ', vatProducts: 'ΦΠΑ προϊόντων', employerRate: 'εργοδοτικές εισφορές', salaryMonths: 'μισθοί/έτος',
   cardShare: '% με κάρτα', cardFee: 'προμήθεια POS', consumablePerCut: 'αναλώσιμα/κούρεμα', corpTax: 'φόρος εταιρείας', dividendTax: 'φόρος μερισμάτων', rampMonths: 'μήνες ως πλήρη πελατεία',
   rampStart: 'πελατεία 1ου μήνα', reserveMonths: 'αποθεματικό (μήνες)', contingencyPct: 'απρόβλεπτα %', horizon: 'ορίζοντας', priceGrowth: 'αύξηση τιμών', wageGrowth: 'αύξηση μισθών', costGrowth: 'αύξηση παγίων', goalNet: 'ελάχιστο καθαρό που θέλουμε'
