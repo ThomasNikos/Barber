@@ -632,7 +632,9 @@ function loanPlan(F) {
 function cashflow(s, C) {
   const st = s.settings, H = Math.max(12, st.horizon | 0), F = s.finance || {}, lp = loanPlan(F);
   const cum = [], monthly = [], years = [], grants = [];
-  const start = -Math.max(0, C.spend - lp.L);
+  // επιδότηση που μπαίνει από την αρχή (μήνας ≤ 1) μειώνει απευθείας τα λεφτά των εταίρων· αλλιώς μπαίνει τον μήνα είσπραξης
+  const g0 = (F.grantOn && +F.grant > 0 && (+F.grantMonth || 1) <= 1) ? +F.grant : 0;
+  const start = -Math.max(0, C.spend - lp.L - g0);
   let c = start, bal = lp.L, payback = null, min = c;
   for (let m = 1; m <= H; m++) {
     const y = Math.floor((m - 1) / 12);
@@ -644,7 +646,7 @@ function cashflow(s, C) {
     const tax = Math.max(0, preTax) * st.corpTax / 100;
     const net = preTax - tax;
     const gOn = !!F.grantOn && +F.grant > 0, gm = +F.grantMonth || 1;
-    const grant = (gOn && m === gm) ? +F.grant : 0;
+    const grant = (gOn && gm > 1 && m === gm) ? +F.grant : 0;
     // επιστρεπτέα επιδότηση: ίσες μηνιαίες δόσεις χωρίς τόκο, μετά την περίοδο χάριτος
     const gN = Math.max(1, Math.round((+F.grantRepayYears || 0) * 12)), gStart = gm + Math.max(0, +F.grantGrace || 0) + 1;
     const grantRepay = (gOn && F.grantNonRepay === false && m >= gStart && m < gStart + gN) ? +F.grant / gN : 0;
@@ -992,7 +994,7 @@ function fOverview(R) {
     row(`Προς διανομή (μετά φόρο μερισμάτων ${st.dividendTax}%)`, eur(Math.max(0, R.net - lp.pay) * (1 - st.dividendTax / 100))));
 
   // cashflow line
-  setHTML('ov-cf-sub', `Ξεκινά από ${eur(CF.start)} (έξοδα έναρξης + απρόβλεπτα${lp.L ? ' − δάνειο' : ''}). Πρώτος μήνας στο ${st.rampStart}% της πελατείας, πλήρης μετά από ${st.rampMonths} μήνες· τιμές +${num1(st.priceGrowth)}%, μισθοί +${num1(st.wageGrowth)}%, πάγια +${num1(st.costGrowth)}% τον χρόνο. ` +
+  setHTML('ov-cf-sub', `Ξεκινά από ${eur(CF.start)} (έξοδα έναρξης + απρόβλεπτα${lp.L ? ' − δάνειο' : ''}${C.grant && (+S.finance.grantMonth || 1) <= 1 ? ' − επιδότηση' : ''})${C.grant && (+S.finance.grantMonth || 1) > 1 ? `· η επιδότηση των ${eur(C.grant)} μπαίνει τον ${num(S.finance.grantMonth)}ο μήνα` : ''}. Πρώτος μήνας στο ${st.rampStart}% της πελατείας, πλήρης μετά από ${st.rampMonths} μήνες· τιμές +${num1(st.priceGrowth)}%, μισθοί +${num1(st.wageGrowth)}%, πάγια +${num1(st.costGrowth)}% τον χρόνο. ` +
     `Χαμηλότερο σημείο: <b>${eur(CF.min)}</b>. ` + (CF.payback ? `Τα λεφτά επιστρέφουν τον <b>${CF.payback}ο μήνα</b>.` : `<b class="neg">Δεν επιστρέφουν μέσα σε ${CF.H} μήνες.</b>`) +
     (-CF.min > -CF.start + C.reserve ? ` <b class="neg">Το ταμείο πέφτει ${eur(-CF.min + CF.start)} κάτω από την αρχική επένδυση — το αποθεματικό των ${eur(C.reserve)} δεν φτάνει.</b>` : ''));
   const w = cw('ov-cf'), narrow = w < 600, H = CF.H;
