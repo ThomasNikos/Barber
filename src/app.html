@@ -205,28 +205,20 @@ svg.chart{display:block;touch-action:pan-y;overflow:visible}
 .hch{margin:4px 0 0;padding-left:18px;font-size:13.5px}
 .hch li{margin:2px 0}
 .hbtn{margin-top:8px;font-size:13px;padding:6px 10px}
-.drawer{position:fixed;top:0;right:0;bottom:0;width:min(400px,100%);background:var(--surface);border-left:1px solid var(--line);box-shadow:-10px 0 40px rgba(0,0,0,.18);transform:translateX(105%);transition:transform .22s ease;z-index:45;overflow-y:auto;padding:16px 16px 40px}
-.drawer.on{transform:none}
-.scrim{position:fixed;inset:0;background:rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity .2s;z-index:44}
-.scrim.on{opacity:1;pointer-events:auto}
-.dhd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.dk{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 4px}
-.dk div{background:var(--surface2);border-radius:10px;padding:8px 10px}
-.dk div>span{display:block;font-size:11.5px;color:var(--muted)}
-.dk b{font-size:17px}
-.drow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed var(--line)}
-.drow>span{min-width:0;font-size:14px}
-.drow em{font-style:normal;font-size:12px;color:var(--muted)}
-.stp{display:flex;align-items:center;gap:4px;flex:none}
-.stp .inp{width:96px}
-.stp input{text-align:right;-moz-appearance:textfield}
-.stp input::-webkit-inner-spin-button,.stp input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
-.sb{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--surface2);font-size:18px;line-height:1;color:var(--ink);flex:none}
-.sb:disabled{opacity:.4}
-.sb:active{background:var(--accent-soft)}
-.trialchk{background:var(--surface2);border-radius:10px;padding:8px 10px}
-#drawerBtn.on{background:var(--accent);border-color:var(--accent);color:#fff}
-@media (max-width:600px){#drawerBtn .lbl{display:none}#drawerBtn svg{margin-right:0}}
+body.target header.top{background:color-mix(in srgb,var(--accent-soft) 85%,transparent);border-bottom-color:var(--accent)}
+body.target header.top::before{content:"";display:block;height:4px;background:var(--accent)}
+.viewbtn{font-weight:600}
+.viewbtn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.viewbtn svg{width:14px;height:14px;vertical-align:-2px;margin-right:5px}
+.tgtbar{background:var(--accent-soft);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.tgtbar .t{font-weight:800;letter-spacing:.12em;color:var(--accent)}
+.cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px;margin:10px 0}
+.cmp div{background:var(--surface);border-radius:9px;padding:7px 10px}
+.cmp span{display:block;font-size:11.5px;color:var(--muted)}
+.cmp b{font-size:16px}
+.cmp em{font-style:normal;font-size:12px;margin-left:6px}
+.viewbtn .ico{display:none}
+@media (max-width:600px){.viewbtn .lbl{display:none}.viewbtn svg{margin-right:0}.viewbtn .ico{display:inline}}
 @media print{header.top nav,.hbtns,.x,.btn{display:none!important} header.top{position:static}}
 </style>
 </head>
@@ -236,7 +228,7 @@ svg.chart{display:block;touch-action:pan-y;overflow:visible}
     <div class="brand">
       <div class="logo"><div class="pole"></div><div><h1>Barber</h1><small id="subtitle">Καλαμάτα · επιχειρηματικό πλάνο</small></div></div>
       <div class="hbtns">
-        <button class="ghost" data-act="drawer" id="drawerBtn" title="Τιμές & κουρέματα"></button>
+        <button class="ghost viewbtn" data-act="view" id="viewBtn"></button>
         <button class="ghost" data-act="lock" id="lockBtn" title="Κλείδωμα αλλαγών"></button>
         <button class="ghost" data-act="theme" title="Φωτεινό / σκοτεινό θέμα"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="margin:0"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5v11A5.5 5.5 0 0 0 8 2.5z" fill="currentColor"/></svg></button>
         <button class="ghost" data-act="logout">Έξοδος</button>
@@ -248,8 +240,6 @@ svg.chart{display:block;touch-action:pan-y;overflow:visible}
 </header>
 <main class="wrap" id="view"></main>
 <div class="toast" id="toast"></div>
-<div class="scrim" id="scrim" data-act="drawer"></div>
-<aside class="drawer" id="drawer" aria-label="Τιμές & κουρέματα"></aside>
 <input type="file" id="importFile" accept="application/json" hidden>
 <input type="file" id="importCsv" accept=".csv,text/csv,text/plain" hidden>
 
@@ -375,7 +365,26 @@ function hydrate(o) {
 }
 let S = (() => { try { return hydrate(JSON.parse(ls.get(LS_KEY))); } catch (e) { return clone(DEFAULTS); } })();
 let TAB = ls.get(LS_TAB) || 'overview';
-const save = () => { ls.set(LS_KEY, JSON.stringify(S)); schedulePush(); };
+/* Δύο ξεχωριστά σετ νούμερων: «Τωρινά» (base) και «Στόχος» (target). Το S είναι πάντα αυτό που βλέπεις. */
+const LS_TGT = 'barber.target.v1', LS_VIEW = 'barber.view';
+let ALT = (() => { try { const o = JSON.parse(ls.get(LS_TGT)); return o ? hydrate(o) : null; } catch (e) { return null; } })();
+let VIEW = ls.get(LS_VIEW) === 'target' ? 'target' : 'base';
+if (VIEW === 'target') { if (!ALT) ALT = clone(S); [S, ALT] = [ALT, S]; }
+const baseState = () => VIEW === 'base' ? S : ALT;
+const targetState = () => VIEW === 'target' ? S : ALT;
+const save = () => {
+  ls.set(LS_KEY, JSON.stringify(baseState()));
+  const t = targetState(); if (t) ls.set(LS_TGT, JSON.stringify(t)); else ls.del(LS_TGT);
+  schedulePush();
+};
+function applyShared(o) {
+  const base = hydrate(o.state), tgt = o.target ? hydrate(o.target) : null;
+  if (VIEW === 'target') { S = tgt || clone(base); ALT = base; } else { S = base; ALT = tgt; }
+  ls.set(LS_KEY, JSON.stringify(base));
+  if (tgt) ls.set(LS_TGT, JSON.stringify(tgt)); else ls.del(LS_TGT);
+  ls.set(LS_SCN, JSON.stringify(o.scenarios || {}));
+  return { state: clone(base), target: tgt ? clone(tgt) : null, scenarios: o.scenarios || {} };
+}
 
 function getPath(o, p) { return p.split('.').reduce((a, k) => a == null ? a : a[k], o); }
 function setPath(o, p, v) { const ks = p.split('.'); const last = ks.pop(); const t = ks.reduce((a, k) => a[k], o); t[last] = v; }
@@ -1301,7 +1310,7 @@ async function importCsvFile(f) {
       `\n\nΗ τωρινή έκδοση θα κρατηθεί ως σενάριο. Να γίνει η εισαγωγή για όλους;`;
     if (!confirm(msg)) return;
     const sc = scenarios(); sc[`Πριν την εισαγωγή CSV ${new Date().toLocaleString('el-GR')}`] = clone(S); ls.set(LS_SCN, JSON.stringify(sc));
-    sync.note = `Εισαγωγή CSV «${f.name}» (${rows.length} γραμμές: ${Object.entries(counts).map(([k, n]) => `${labels[k]} ${n}`).join(', ')})`;
+    sync.note = (VIEW === 'target' ? 'Στόχος · ' : '') + `Εισαγωγή CSV «${f.name}» (${rows.length} γραμμές: ${Object.entries(counts).map(([k, n]) => `${labels[k]} ${n}`).join(', ')})`;
     S = hydrate(next); save(); renderView(); toast('Η εισαγωγή ολοκληρώθηκε');
   } catch (err) { console.error(err); alert('Δεν διαβάστηκε το CSV: ' + err.message); }
 }
@@ -1351,7 +1360,7 @@ async function decryptObj(s) {
   const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64d(p.i) }, sync.key, b64d(p.c));
   return JSON.parse(new TextDecoder().decode(pt));
 }
-const snapshot = () => ({ state: clone(S), scenarios: scenarios() });
+const snapshot = () => ({ state: clone(baseState()), target: targetState() ? clone(targetState()) : null, scenarios: scenarios() });
 
 async function syncInit() {
   if (!AUTH || !AUTH.token || !/^[0-9a-f]{64}$/.test(DATA_KEY) || !window.crypto || !crypto.subtle) { setSync('local'); return; }
@@ -1367,7 +1376,7 @@ async function syncInit() {
   } catch (e) { console.error(e); setSync('err'); }
 }
 async function pull({ initial = false, force = false }) {
-  if (!sync.on || (!force && (sync.pending || sync.saving || trial.on))) return;
+  if (!sync.on || (!force && (sync.pending || sync.saving))) return;
   try {
     const r = await rpc('barber_load');
     if (!r) { if (initial) { sync.base = { state: clone(DEFAULTS), scenarios: {} }; sync.note = 'Πρώτη αποθήκευση'; await push(); } else setSync('ok'); return; }
@@ -1378,17 +1387,14 @@ async function pull({ initial = false, force = false }) {
     const editing = document.activeElement && document.activeElement.matches('#view input, #view select');
     if (!initial && !force && editing) return; // retry on next poll, don't steal focus
     sync.version = r.version; sync.by = r.updated_by || ''; sync.at = r.updated_at;
-    S = hydrate(o.state);
-    ls.set(LS_KEY, JSON.stringify(S));
-    ls.set(LS_SCN, JSON.stringify(o.scenarios || {}));
-    sync.base = snapshot();
+    sync.base = applyShared(o);
     renderView();
     setSync('ok');
     if (!initial && sync.by && sync.by !== who()) toast(`Νέα έκδοση από ${sync.by}`);
   } catch (e) { console.error(e); setSync('err'); }
 }
 function schedulePush() {
-  if (!sync.on || trial.on) return;
+  if (!sync.on) return;
   sync.pending = true; setSync('pending');
   clearTimeout(sync.timer);
   sync.timer = setTimeout(push, 1500);
@@ -1440,7 +1446,18 @@ function fmtV(k, v) {
   return `«${v ?? ''}»`;
 }
 function diffStates(a, b) {
-  const out = [], A = a.state, B = b.state;
+  const out = diffOne(a.state, b.state);
+  if (b.target) {
+    if (!a.target) out.push('Δημιουργήθηκε ο «Στόχος»', ...diffOne(b.state, b.target).map(x => 'Στόχος · ' + x));
+    else out.push(...diffOne(a.target, b.target).filter(x => !/κλείδωσε/i.test(x)).map(x => 'Στόχος · ' + x));
+  } else if (a.target) out.push('Διαγράφηκε ο «Στόχος»');
+  const sa = Object.keys(a.scenarios || {}), sb = Object.keys(b.scenarios || {});
+  sb.filter(n => !sa.includes(n)).forEach(n => out.push(`+ Σενάριο «${n}»`));
+  sa.filter(n => !sb.includes(n)).forEach(n => out.push(`− Σενάριο «${n}»`));
+  return out;
+}
+function diffOne(A, B) {
+  const out = [];
   ['barbers', 'services', 'capex', 'fixed', 'partners'].forEach(sec => {
     const xa = A[sec] || [], xb = B[sec] || [], L = SEC_LABEL[sec];
     const fieldDiff = (p, q) => Object.keys(Object.assign({}, p, q)).forEach(k => {
@@ -1459,9 +1476,6 @@ function diffStates(a, b) {
     Object.keys(q).forEach(k => { if (JSON.stringify(p[k]) !== JSON.stringify(q[k])) out.push(`${SEC_LABEL[sec]}: ${F_LABEL[k] || k} ${fmtV(k, p[k])} → ${fmtV(k, q[k])}`); });
   });
   if (!!A.locked !== !!B.locked) out.push(B.locked ? 'Κλείδωσε τα νούμερα' : 'Ξεκλείδωσε τα νούμερα');
-  const sa = Object.keys(a.scenarios || {}), sb = Object.keys(b.scenarios || {});
-  sb.filter(n => !sa.includes(n)).forEach(n => out.push(`+ Σενάριο «${n}»`));
-  sa.filter(n => !sb.includes(n)).forEach(n => out.push(`− Σενάριο «${n}»`));
   return out;
 }
 
@@ -1527,77 +1541,10 @@ async function restoreVersion(id, at) {
   try {
     const r = await rpc('barber_log_get', { p_token: AUTH.token, p_id: +id });
     const o = await decryptObj(r.snapshot);
-    S = hydrate(o.state);
-    ls.set(LS_SCN, JSON.stringify(o.scenarios || {}));
+    applyShared(o);
     sync.note = `Επαναφορά στην έκδοση της ${fmtTime(at)} (${r.user_name})`;
     save(); renderView(); toast('Έγινε επαναφορά');
   } catch (e) { console.error(e); toast('Η επαναφορά απέτυχε'); }
-}
-
-/* =========================================================
-   QUICK PANEL (κουμπί πάνω δεξιά): τιμές & κουρέματα από
-   οποιαδήποτε καρτέλα, με προαιρετική «δοκιμή» που δεν
-   αποθηκεύεται για τους άλλους.
-   ========================================================= */
-let drawerOpen = false;
-const trial = { on: false, snap: null };
-const SLIDERS_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h7M13 4h1M2 8h2M8 8h6M2 12h9M14 12h0"/><circle cx="11" cy="4" r="1.8"/><circle cx="6" cy="8" r="1.8"/><circle cx="12.5" cy="12" r="1.5"/></svg>';
-function stepper(p, step, suf, min = 0) {
-  return `<div class="stp"><button class="sb" data-act="step" data-k="${p}" data-d="${-step}" data-min="${min}" aria-label="μείον">−</button><div class="inp"><input type="number" inputmode="decimal" step="${step}" data-k="${p}" data-t="n" value="${esc(val(p))}">${suf ? `<i>${suf}</i>` : ''}</div><button class="sb" data-act="step" data-k="${p}" data-d="${step}" data-min="${min}" aria-label="συν">+</button></div>`;
-}
-function renderDrawer() {
-  const d = $('drawer');
-  if (!d) return;
-  d.classList.toggle('on', drawerOpen);
-  $('scrim').classList.toggle('on', drawerOpen);
-  if (!drawerOpen) return;
-  const coffee = S.barista.coffeeMode === 'paid' || S.barista.coffeeMode === 'both';
-  const avg = S.barbers.length ? Math.round(S.barbers.reduce((a, b) => a + (+b.cutsPerDay || 0), 0) / S.barbers.length) : 8;
-  d.innerHTML = `
-    <div class="dhd"><h3 style="margin:0">Τιμές & κουρέματα</h3><button class="x" data-act="drawer" aria-label="Κλείσιμο">×</button></div>
-    <label class="chk trialchk"><input type="checkbox" id="trialChk"${trial.on ? ' checked' : ''}> Μόνο δοκιμή — να μη σωθεί για τους άλλους</label>
-    ${trial.on ? `<div class="note" style="margin-top:6px">Δοκιμή: οι αλλαγές φαίνονται μόνο σε σένα. <div class="btns" style="margin-top:8px"><button class="btn" data-act="trialKeep">Κράτα τις για όλους</button><button class="btn sec2" data-act="trialCancel">Ακύρωση</button></div></div>` : (S.locked ? '<div class="note warn" style="margin-top:6px">Κλειδωμένο. Τσέκαρε «Μόνο δοκιμή» για να δοκιμάσεις νούμερα χωρίς να αλλάξουν για τους άλλους.</div>' : '')}
-    <div class="dk" id="dkpis"></div>
-    <div class="sub2">Κουρέματα την ημέρα</div>
-    <div class="drow"><span><b>Όλοι</b></span><div class="stp"><button class="sb" data-act="allCuts" data-d="-1">−</button><div class="inp"><input type="number" id="allCuts" value="${avg}" step="1"><i>κουρ.</i></div><button class="sb" data-act="allCuts" data-d="1">+</button></div></div>
-    ${S.barbers.map((b, i) => `<div class="drow"><span>${esc(b.name)} <span class="small">${MODES[b.mode].label}</span><em id="dres-${i}"></em></span>${stepper(`barbers.${i}.cutsPerDay`, 1, 'κουρ.')}</div>`).join('')}
-    <div class="sub2">Τιμές (με ΦΠΑ)</div>
-    ${S.services.map((x, i) => `<div class="drow"><span>${esc(x.name)} <span class="small">${num(x.mix)}% πελατών</span></span>${stepper(`services.${i}.price`, 0.5, '€')}</div>`).join('')}
-    <div class="drow"><span>Μέση απόδειξη</span><b id="dticket"></b></div>
-    ${coffee ? `<div class="sub2">Καφές</div>
-      <div class="drow"><span>Τιμή καφέ</span>${stepper('barista.price', 0.1, '€')}</div>
-      <div class="drow"><span>Πωλήσεις/ημέρα</span>${stepper('barista.cupsPerDay', 5, 'τεμ.')}</div>` : ''}
-    <div class="sub2">Κεφάλαιο</div>
-    <div class="drow"><span>Αποθεματικό κίνησης <em id="dres-reserve"></em></span>${stepper('settings.reserveMonths', 0.5, 'μήνες')}</div>
-    <div class="drow"><span>Απαιτούμενο κεφάλαιο</span><b id="dcap"></b></div>
-    <p class="small" style="margin-top:14px">Οι αλλαγές ${trial.on ? 'μένουν μόνο σε αυτή τη συσκευή μέχρι να πατήσεις «Κράτα τις για όλους».' : 'αποθηκεύονται αμέσως για όλους και φαίνονται στο ιστορικό.'}</p>`;
-  const editable = !S.locked || trial.on;
-  d.querySelectorAll('[data-k], #allCuts').forEach(e => { e.disabled = !editable; });
-  d.querySelectorAll('[data-act="step"], [data-act="allCuts"]').forEach(e => { e.disabled = !editable; });
-}
-function fillDrawer(R, C, CF, BE) {
-  if (!drawerOpen || !$('dkpis')) return;
-  $('dkpis').innerHTML = [
-    ['Καθαρό/μήνα', `<span class="${sgn(R.net)}">${eur(R.net)}</span>`],
-    ['Απόσβεση', CF.payback ? `${CF.payback} μήνες` : `> ${CF.H} μήνες`],
-    ['Νεκρό σημείο', BE.cpd != null ? `${num1(BE.cpd)} κουρ.` : '—'],
-    ['Πελάτες/μήνα', num(R.clients)]
-  ].map(([l, v]) => `<div><span>${l}</span><b>${v}</b></div>`).join('');
-  if ($('dticket')) $('dticket').textContent = eur2(R.avgTicket);
-  if ($('dres-reserve')) $('dres-reserve').innerHTML = ` · ${eur(C.reserve)}`;
-  if ($('dcap')) $('dcap').textContent = eur(C.total);
-  R.barbers.forEach((b, i) => { const e = $(`dres-${i}`); if (e) e.innerHTML = ` · μένουν <span class="${sgn(b.contrib)}">${eur(b.contrib)}</span>`; });
-}
-function setTrial(on) {
-  if (on) { trial.on = true; trial.snap = clone(S); clearTimeout(sync.timer); sync.pending = false; }
-  else { trial.on = false; trial.snap = null; }
-  updateTrialUI();
-}
-function updateTrialUI() {
-  const b = $('drawerBtn');
-  if (b) { b.classList.toggle('on', trial.on); b.innerHTML = SLIDERS_SVG + `<span class="lbl">${trial.on ? 'Δοκιμή' : 'Τιμές & κουρέματα'}</span>`; }
-  if (trial.on) { const el = $('subtitle'); if (el) el.innerHTML = '<span style="color:var(--accent)">●</span> δοκιμή — οι αλλαγές δεν αποθηκεύονται'; }
-  else if (sync.on) setSync(sync.state === 'pending' ? 'ok' : sync.state); else setSync('local');
 }
 
 /* =========================================================
@@ -1607,17 +1554,24 @@ function renderTabs() {
   $('tabs').innerHTML = Object.entries(TABS).map(([k, t]) => `<button class="${k === TAB ? 'on' : ''}" data-act="tab" data-tab="${k}">${t.label}</button>`).join('');
 }
 const LOCK_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>';
+const TARGET_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="3"/><circle cx="8" cy="8" r=".8" fill="currentColor"/></svg>';
 function renderView() {
   if (!TABS[TAB]) TAB = 'overview';
   renderTabs();
   setTimeout(() => { if (TAB === 'history') loadHistory(); }, 0);
-  $('view').innerHTML = (S.locked ? `<div class="lockbar"><span>${LOCK_SVG}Κλειδωμένο — τα νούμερα δεν αλλάζουν.</span><button class="btn sec2" data-act="lock">Ξεκλείδωμα</button></div>` : '') + TABS[TAB].render();
+  document.body.classList.toggle('target', VIEW === 'target');
+  const vb = $('viewBtn');
+  vb.classList.toggle('on', VIEW === 'target');
+  vb.title = VIEW === 'target' ? 'Πίσω στα τωρινά νούμερα' : 'Δες τον Στόχο: ξεχωριστά νούμερα που θέλετε να πετύχετε';
+  vb.innerHTML = VIEW === 'target' ? `<span class="lbl">← Τωρινά</span><span class="ico">←</span>` : TARGET_SVG + '<span class="lbl">Στόχος</span>';
+  $('view').innerHTML = (VIEW === 'target' ? `<div class="tgtbar"><span class="t">ΣΤΟΧΟΣ</span> <span class="small">— ξεχωριστά νούμερα, όπως θα θέλατε να είναι. Ό,τι αλλάζεις εδώ δεν πειράζει τα τωρινά.</span>
+    <div class="cmp" id="tgtcmp"></div>
+    <div class="btns"><button class="btn" data-act="view">← Πίσω στα τωρινά</button><button class="btn sec2" data-act="tgtReset">Ξανά από τα τωρινά</button></div></div>` : '') + (S.locked ? `<div class="lockbar"><span>${LOCK_SVG}Κλειδωμένο — τα νούμερα δεν αλλάζουν.</span><button class="btn sec2" data-act="lock">Ξεκλείδωμα</button></div>` : '') + TABS[TAB].render();
   document.body.classList.toggle('locked', !!S.locked);
   if (S.locked) $('view').querySelectorAll('[data-k]').forEach(e => { e.disabled = true; });
   const lb = $('lockBtn');
   lb.innerHTML = LOCK_SVG + `<span class="lbl">${S.locked ? 'Κλειδωμένο' : 'Κλείδωμα'}</span>`;
   lb.classList.toggle('on', !!S.locked);
-  renderDrawer(); updateTrialUI();
   refresh();
 }
 let rfq = 0;
@@ -1633,15 +1587,23 @@ function refresh() {
   ].map(([l, v]) => `<div class="st"><span>${l}</span><b>${v}</b></div>`).join('');
   document.querySelectorAll('[data-show]').forEach(e => { e.textContent = getPath(S, e.dataset.show); });
   TABS[TAB].fill(R);
-  if (drawerOpen) fillDrawer(R, C, CF, breakeven(S));
+  if (VIEW === 'target' && $('tgtcmp')) {
+    const B = baseState(), RB = compute(B), CB = capexTotals(B, RB), FB = cashflow(B, CB);
+    const S0 = S; S = B; const BB = breakeven(B); S = S0; const BT = breakeven(S);
+    const d = (a, b, inv) => { const x = a - b; if (Math.abs(x) < 0.5) return ''; const good = inv ? x < 0 : x > 0; return `<em class="${good ? 'pos' : 'neg'}">${x > 0 ? '+' : '−'}${eur(Math.abs(x))}</em>`; };
+    $('tgtcmp').innerHTML = [
+      ['Καθαρό/μήνα', `${eur(R.net)}${d(R.net, RB.net)}`, `τωρινά ${eur(RB.net)}`],
+      ['Απόσβεση', CF.payback ? `${CF.payback} μήνες` : `> ${CF.H}`, `τωρινά ${FB.payback ? FB.payback + ' μήνες' : '> ' + FB.H}`],
+      ['Κεφάλαιο', `${eur(C.total)}${d(C.total, CB.total, true)}`, `τωρινά ${eur(CB.total)}`],
+      ['Πελάτες/μήνα', num(R.clients), `τωρινά ${num(RB.clients)} · νεκρό σημείο ${BT.cpd != null ? num1(BT.cpd) : '—'}`]
+    ].map(([l, v, e]) => `<div><span>${l}</span><b>${v}</b><span>${e}</span></div>`).join('');
+  }
 }
 
 document.addEventListener('input', e => {
-  if (e.target.id === 'trialChk') { if (e.target.checked) setTrial(true); else { if (trial.snap && JSON.stringify(trial.snap) !== JSON.stringify(S) && !confirm('Να κρατηθούν οι αλλαγές της δοκιμής για όλους; (Άκυρο = πετιούνται)')) { S = trial.snap; ls.set(LS_KEY, JSON.stringify(S)); setTrial(false); } else { setTrial(false); save(); } } renderView(); return; }
-  if (e.target.id === 'allCuts') { const v = Math.max(0, parseFloat(e.target.value) || 0); if (S.locked && !trial.on) return; S.barbers.forEach((b, i) => { b.cutsPerDay = v; document.querySelectorAll(`[data-k="barbers.${i}.cutsPerDay"]`).forEach(o => { o.value = v; }); }); save(); refreshSoon(); return; }
   if (e.target.id === 'histLogins') { ls.set('barber.histLogins', e.target.checked ? '1' : '0'); loadHistory(); return; }
   const el = e.target.closest('[data-k]');
-  if (!el || (S.locked && !trial.on)) return;
+  if (!el || S.locked) return;
   const t = el.dataset.t;
   let v;
   if (t === 'b') v = el.checked;
@@ -1655,26 +1617,20 @@ document.addEventListener('input', e => {
 
 const blankBarber = n => ({ name: `Κουρέας ${n}`, mode: 'salary', cutsPerDay: 8, ticket: 0, salary: 1100, bonusPct: 0, rent: 400, barberPct: 50 });
 const ACTIONS = {
-  drawer: () => { drawerOpen = !drawerOpen; renderDrawer(); refresh(); return false; },
-  step: d => {
-    if (S.locked && !trial.on) return false;
-    const cur = +getPath(S, d.k) || 0, v = Math.max(+d.min || 0, Math.round((cur + +d.d) * 100) / 100);
-    setPath(S, d.k, v); save();
-    document.querySelectorAll(`[data-k="${d.k}"]`).forEach(o => { o.value = v; });
-    refreshSoon(); return false;
+  view: () => {
+    if (VIEW === 'base') {
+      if (!ALT) { ALT = clone(S); toast('Ο Στόχος ξεκινά ως αντίγραφο των τωρινών — άλλαξε ό,τι θέλεις'); }
+      [S, ALT] = [ALT, S]; VIEW = 'target';
+    } else { [S, ALT] = [ALT, S]; VIEW = 'base'; toast('Τωρινά νούμερα'); }
+    ls.set(LS_VIEW, VIEW); window.scrollTo({ top: 0 });
   },
-  allCuts: d => {
-    if (S.locked && !trial.on) return false;
-    const inp = $('allCuts'), v = Math.max(0, (parseFloat(inp.value) || 0) + (+d.d || 0));
-    inp.value = v;
-    S.barbers.forEach((b, i) => { b.cutsPerDay = v; document.querySelectorAll(`[data-k="barbers.${i}.cutsPerDay"]`).forEach(o => { o.value = v; }); });
-    save(); refreshSoon(); return false;
+  tgtReset: () => {
+    if (VIEW !== 'target' || !confirm('Ο Στόχος θα γίνει ξανά ίδιος με τα τωρινά νούμερα. Συνέχεια;')) return false;
+    S = clone(ALT); toast('Ο Στόχος αντιγράφηκε από τα τωρινά');
   },
-  trialKeep: () => { setTrial(false); save(); toast('Οι αλλαγές σώθηκαν για όλους'); },
-  trialCancel: () => { S = trial.snap; setTrial(false); ls.set(LS_KEY, JSON.stringify(S)); toast('Η δοκιμή ακυρώθηκε'); },
   lock: () => {
     if (S.locked && !confirm('Ξεκλείδωμα; Οι αλλαγές θα φαίνονται σε όλους τους εταίρους.')) return false;
-    S.locked = !S.locked; toast(S.locked ? 'Κλειδώθηκε για όλους' : 'Ξεκλειδώθηκε');
+    S.locked = !S.locked; if (ALT) ALT.locked = S.locked; toast(S.locked ? 'Κλειδώθηκε για όλους' : 'Ξεκλειδώθηκε');
   },
   histReload: () => { loadHistory(); return false; },
   restore: d => { restoreVersion(d.id, d.at); return false; },
@@ -1720,7 +1676,7 @@ document.addEventListener('click', e => {
   if (!el) return;
   const fn = ACTIONS[el.dataset.act];
   if (!fn) return;
-  if (S.locked && /^(add|del|reset|import|loadScn)/.test(el.dataset.act)) { e.preventDefault(); toast('Κλειδωμένο — πάτα «Ξεκλείδωμα»'); return; }
+  if (S.locked && /^(add|del|reset|import|loadScn|tgtReset)/.test(el.dataset.act)) { e.preventDefault(); toast('Κλειδωμένο — πάτα «Ξεκλείδωμα»'); return; }
   e.preventDefault();
   const r = fn(el.dataset);
   if (r === false) return;
