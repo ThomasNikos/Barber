@@ -882,7 +882,22 @@ function fBridge() {
   const H = Math.min(cB.H, cT.H), vB = [cB.start, ...cB.cum.slice(0, H)], vT = [cT.start, ...cT.cum.slice(0, H)];
   const w = cw('ov-bridge-cash'), step = w < 600 ? 12 : 6, ticks = []; for (let i = 0; i <= H; i += step) ticks.push(i);
   const ser = [{ name: 'Τωρινά', color: 'var(--c8)', values: vB, dash: true }, { name: toName, color: 'var(--accent)', values: vT }];
-  box.innerHTML = `<p class="small" style="margin-top:-6px">Πώς αλλάζει το καθαρό κέρδος/μήνα, βήμα-βήμα, από τα τωρινά νούμερα ${VIEW === 'play' ? 'σε αυτά που παίζεις' : 'στον Στόχο'}.</p>` + bridgeHTML(B, to, toName);
+  // κουρέματα ανά κουρέα: τωρινά → στόχος
+  const RB = compute(B), RT = compute(to), d = S.settings.daysPerMonth;
+  const names = [...new Set([...B.barbers.map(x => x.name), ...to.barbers.map(x => x.name)])];
+  const cutRows = names.map(n => {
+    const b = B.barbers.find(x => x.name === n), t = to.barbers.find(x => x.name === n);
+    const cb = b ? +b.cutsPerDay || 0 : null, ct = t ? +t.cutsPerDay || 0 : null;
+    const ob = b ? otMonthly(b, B.settings) : 0, ot = t ? otMonthly(t, to.settings) : 0;
+    const diff = (ct ?? 0) - (cb ?? 0);
+    return `<tr><td>${esc(n)}</td><td class="num">${cb == null ? '—' : num1(cb)}${ob ? ` <span class="small">+${num1(ob)}ώ υπερ.</span>` : ''}</td><td class="num">${ct == null ? '—' : num1(ct)}${ot ? ` <span class="small">+${num1(ot)}ώ υπερ.</span>` : ''}</td><td class="num ${diff > 0 ? 'pos' : diff < 0 ? 'neg' : ''}">${diff ? (diff > 0 ? '+' : '−') + num1(Math.abs(diff)) : '—'}</td></tr>`;
+  }).join('');
+  const dc = RT.clients - RB.clients;
+  const cutsTable = `<div class="sub2">Κουρέματα</div><div class="scroll"><table class="tbl"><tr><th>Κουρέας</th><th class="num">Τωρινά/ημέρα</th><th class="num">${toName}/ημέρα</th><th class="num">Διαφορά</th></tr>${cutRows}
+    <tr style="font-weight:700"><td>Πελάτες/μήνα</td><td class="num">${num(RB.clients)}</td><td class="num">${num(RT.clients)}</td><td class="num ${dc > 0 ? 'pos' : dc < 0 ? 'neg' : ''}">${Math.round(dc) ? (dc > 0 ? '+' : '−') + num(Math.abs(dc)) : '—'}</td></tr>
+    <tr><td>Πελάτες/ημέρα</td><td class="num">${num(RB.clients / d)}</td><td class="num">${num(RT.clients / to.settings.daysPerMonth)}</td><td></td></tr>
+    <tr><td>Μέση απόδειξη</td><td class="num">${eur2(RB.avgTicket)}</td><td class="num">${eur2(RT.avgTicket)}</td><td class="num">${Math.abs(RT.avgTicket - RB.avgTicket) >= 0.01 ? (RT.avgTicket > RB.avgTicket ? '+' : '−') + eur2(Math.abs(RT.avgTicket - RB.avgTicket)) : '—'}</td></tr></table></div>`;
+  box.innerHTML = `<p class="small" style="margin-top:-6px">Πώς αλλάζει το καθαρό κέρδος/μήνα, βήμα-βήμα, από τα τωρινά νούμερα ${VIEW === 'play' ? 'σε αυτά που παίζεις' : 'στον Στόχο'}.</p>` + bridgeHTML(B, to, toName) + cutsTable;
   setHTML('ov-bridge-cash', legend(ser.map(x => [x.color, x.name, x.dash ? 'dash' : ''])) + lineChart({
     w, n: H + 1, series: ser, ticks, xLabel: i => i === 0 ? (w < 600 ? '0' : 'Έναρξη') : i + 'ος', label: 'Σωρευτικό ταμείο: τωρινά και ' + toName,
     marks: [cT.payback && cT.payback <= H ? { i: cT.payback, v: vT[cT.payback], label: `${toName}: απόσβεση μήνας ${cT.payback}` } : null].filter(Boolean),
