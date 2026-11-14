@@ -1272,6 +1272,7 @@ async function importCsvFile(f) {
       `\n\nΗ τωρινή έκδοση θα κρατηθεί ως σενάριο. Να γίνει η εισαγωγή για όλους;`;
     if (!confirm(msg)) return;
     const sc = scenarios(); sc[`Πριν την εισαγωγή CSV ${new Date().toLocaleString('el-GR')}`] = clone(S); ls.set(LS_SCN, JSON.stringify(sc));
+    sync.note = `Εισαγωγή CSV «${f.name}» (${rows.length} γραμμές: ${Object.entries(counts).map(([k, n]) => `${labels[k]} ${n}`).join(', ')})`;
     S = hydrate(next); save(); renderView(); toast('Η εισαγωγή ολοκληρώθηκε');
   } catch (err) { console.error(err); alert('Δεν διαβάστηκε το CSV: ' + err.message); }
 }
