@@ -699,7 +699,8 @@ function lineChart(o) {
   if (o.vline) {
     const vx = P.l + (W - P.l - P.r) * o.vline.at / (n - 1);
     const right = vx > W * 0.6;
-    g += `<line x1="${vx}" x2="${vx}" y1="${P.t}" y2="${H - P.b}" stroke="var(--ink)" stroke-dasharray="3 4" opacity=".55"/><text x="${vx + (right ? -6 : 6)}" y="${P.t - 8}" text-anchor="${right ? 'end' : 'start'}" style="fill:var(--ink);font-weight:600">${o.vline.label}</text>`;
+    const ly = (o.marks && o.marks.length) ? P.t + 12 : P.t - 8;
+    g += `<line x1="${vx}" x2="${vx}" y1="${P.t}" y2="${H - P.b}" stroke="var(--ink)" stroke-dasharray="3 4" opacity=".55"/><text x="${vx + (right ? -6 : 6)}" y="${ly}" text-anchor="${right ? 'end' : 'start'}" style="fill:var(--ink);font-weight:600;paint-order:stroke;stroke:var(--surface);stroke-width:4px">${o.vline.label}</text>`;
   }
   o.series.forEach(s => {
     g += `<path d="${s.values.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('')}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"${s.dash ? ' stroke-dasharray="6 4"' : ''}/>`;
@@ -1003,6 +1004,11 @@ function rMinimums() {
     <div id="mn-now" class="note"></div>
   </div>
   <div class="grid g3 sec" id="mn-cards"></div>
+  <div class="card sec"><h3>Καθαρό κέρδος ανάλογα με τα κουρέματα</h3><p class="small" style="margin-top:-6px">Αν κάθε κουρέας κάνει τόσα κουρέματα την ημέρα. Κάτω από τη γραμμή του μηδέν το μαγαζί μπαίνει μέσα.</p><div id="mn-ch-cuts"></div></div>
+  <div class="grid g2 sec">
+    <div class="card"><h3>Καθαρό κέρδος ανάλογα με την τιμή</h3><p class="small" style="margin-top:-6px">Μέση απόδειξη κουρέματος με ΦΠΑ, με τα σημερινά κουρέματα.</p><div id="mn-ch-price"></div></div>
+    <div class="card" id="mn-coffee-card"><h3>Καθαρό κέρδος ανάλογα με τον καφέ</h3><p class="small" style="margin-top:-6px">Καφέδες που πωλούνται την ημέρα.</p><div id="mn-ch-coffee"></div></div>
+  </div>
   <div class="grid g2 sec">
     <div class="card"><h3>Ελάχιστες τιμές</h3><p class="small" style="margin-top:-6px">Αν ανέβουν όλες οι τιμές με την ίδια αναλογία και τα κουρέματα μείνουν ίδια.</p><div id="mn-prices"></div></div>
     <div class="card"><h3>Κάθε κουρέας για να βγάζει το κόστος του</h3><p class="small" style="margin-top:-6px">Κουρέματα την ημέρα για να καλύπτει τον μισθό/ποσοστό του, τα αναλώσιμα και το POS. Πάνω από αυτό αρχίζει να πληρώνει ενοίκιο, μπαρίστα και πάγια.</p><div id="mn-barbers"></div></div>
@@ -1063,6 +1069,36 @@ function fMinimums(R) {
     cards.push(minCard('Μέγιστος μικτός μισθός κουρέα', maxSal, avgSal, v => eur(v), { max: true, note: `ίδιος για τους ${sal.length} μισθωτούς` }));
   }
   setHTML('mn-cards', cards.join(''));
+
+  // διαγράμματα
+  const refs = goal ? [{ y: goal, color: 'var(--accent)' }] : [];
+  const goalTxt = goal ? 'στόχος' : 'όριο';
+  const sens = (id, xs, mk, opts) => {
+    const vals = xs.map(x => compute(mk(x)).net);
+    const w = cw(id), n = xs.length, step = opts.tickEvery || (w < 600 ? 4 : 2);
+    const ticks = xs.map((_, i) => i).filter(i => i % step === 0 || i === n - 1);
+    const at = v => (v - xs[0]) / (xs[n - 1] - xs[0]) * (n - 1);
+    const minX = opts.min, nowX = opts.now;
+    setHTML(id, (goal ? legend([['var(--c1)', 'Καθαρό/μήνα'], ['var(--accent)', `στόχος ${eur(goal)}`, 'dash']]) : '') + lineChart({
+      w, n, label: opts.label, series: [{ name: 'Καθαρό/μήνα', color: 'var(--c1)', values: vals }], refs,
+      ticks, xLabel: i => opts.fmtX(xs[i]),
+      vline: nowX >= xs[0] && nowX <= xs[n - 1] ? { at: at(nowX), label: `σήμερα ${opts.fmtX(nowX)}` } : null,
+      marks: minX != null && minX > xs[0] && minX <= xs[n - 1] ? [{ i: at(minX), v: goal, label: `${goalTxt} ${opts.fmtX(minX)}` }] : [],
+      tip: i => tipHTML(opts.tipTitle(xs[i]), [['var(--c1)', 'Καθαρό/μήνα', eur(vals[i])], ['', 'Καθαρό/έτος', eur(vals[i] * 12)]])
+    }));
+  };
+  const cx = []; for (let x = 0; x <= Math.max(20, Math.ceil(avgCpd) + 4); x++) cx.push(x);
+  sens('mn-ch-cuts', cx, x => withS(s => s.barbers.forEach(b => { if (b.mode !== 'rent') b.cutsPerDay = x; })),
+    { label: 'Καθαρό ανά κουρέματα/ημέρα', min: cpd, now: avgCpd, fmtX: v => num1(v), tipTitle: x => `${x} κουρέματα/ημέρα ανά κουρέα`, tickEvery: cx.length > 22 || cw('mn-ch-cuts') < 600 ? 4 : 2 });
+  const at0 = R.avgTicket || 1, px = []; for (let x = 6; x <= 26; x++) px.push(x);
+  sens('mn-ch-price', px, x => scaleS(x / at0), { label: 'Καθαρό ανά μέση τιμή', min: fMin == null ? null : at0 * fMin, now: at0, fmtX: v => num1(v) + '€', tipTitle: x => `Μέση απόδειξη ${x} €` });
+  const sold = S.barista.coffeeMode === 'paid' || S.barista.coffeeMode === 'both';
+  $('mn-coffee-card').style.display = sold ? '' : 'none';
+  if (sold) {
+    const cf = []; for (let x = 0; x <= 100; x += 5) cf.push(x);
+    const cmin = solveMin(x => g(withS(s => { s.barista.cupsPerDay = x; })), 0, 1000);
+    sens('mn-ch-coffee', cf, x => withS(s => { s.barista.cupsPerDay = x; }), { label: 'Καθαρό ανά καφέδες/ημέρα', min: cmin, now: +S.barista.cupsPerDay || 0, fmtX: v => num(v), tipTitle: x => `${x} καφέδες/ημέρα`, tickEvery: 4 });
+  }
 
   // ελάχιστες τιμές ανά υπηρεσία
   setHTML('mn-prices', fMin == null ? '<p class="small neg">Ακόμα και με 5πλάσιες τιμές δεν βγαίνει — το πρόβλημα είναι τα έξοδα ή τα κουρέματα.</p>' :
