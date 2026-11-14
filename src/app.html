@@ -163,6 +163,12 @@ svg text{fill:var(--muted);font-size:12px;font-family:inherit}
 .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
 .toast.on{opacity:1}
 @media (max-width:600px){
+  .hbtns{gap:4px}
+  .hbtns .ghost{padding:6px 8px}
+  #logoutBtn .lbl{display:none}
+  #logoutBtn .ico2{display:inline}
+  .logo small{font-size:10.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .pole{flex:none}
   .strip{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 12px;overflow:visible}
   .st b{font-size:15px}
   .st>span{font-size:9.5px}
@@ -226,7 +232,19 @@ body.target header.top::before{content:"";display:block;height:4px;background:va
 .cmp b{font-size:16px}
 .cmp em{font-style:normal;font-size:12px;margin-left:6px}
 .viewbtn .ico{display:none}
+.ico2{display:none;width:14px;height:14px;vertical-align:-2px}
+#playBtn.on{background:var(--c1);border-color:var(--c1)}
+body.play header.top{background:color-mix(in srgb,var(--c1) 12%,var(--bg));border-bottom-color:var(--c1)}
+body.play header.top::before{content:"";display:block;height:4px;background:var(--c1)}
+.playbar{background:color-mix(in srgb,var(--c1) 10%,var(--surface));border-color:var(--c1)}
+.playbar .t{color:var(--c1)}
+.playbar .btn:not(.sec2){background:var(--c1)}
 @media (max-width:600px){.viewbtn .lbl{display:none}.viewbtn svg{margin-right:0}.viewbtn .ico{display:inline}}
+.mn .big{display:block;font-size:24px;font-weight:700;margin:2px 0 6px}
+.mn.ok .big{color:var(--pos)} .mn.bad .big{color:var(--neg)}
+.mnbar{height:8px;border-radius:99px;background:var(--surface2);overflow:hidden;margin-bottom:6px}
+.mnbar div{height:100%;border-radius:99px;background:var(--muted)}
+.mn.ok .mnbar div{background:var(--pos)} .mn.bad .mnbar div{background:var(--neg)}
 @media print{header.top nav,.hbtns,.x,.btn{display:none!important} header.top{position:static}}
 </style>
 </head>
@@ -236,10 +254,11 @@ body.target header.top::before{content:"";display:block;height:4px;background:va
     <div class="brand">
       <div class="logo"><div class="pole"></div><div><h1>Barber</h1><small id="subtitle">Καλαμάτα · επιχειρηματικό πλάνο</small></div></div>
       <div class="hbtns">
+        <button class="ghost viewbtn" data-act="play" id="playBtn"></button>
         <button class="ghost viewbtn" data-act="view" id="viewBtn"></button>
         <button class="ghost" data-act="lock" id="lockBtn" title="Κλείδωμα αλλαγών"></button>
         <button class="ghost" data-act="theme" title="Φωτεινό / σκοτεινό θέμα"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="margin:0"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5v11A5.5 5.5 0 0 0 8 2.5z" fill="currentColor"/></svg></button>
-        <button class="ghost" data-act="logout">Έξοδος</button>
+        <button class="ghost" data-act="logout" title="Έξοδος" id="logoutBtn"><span class="lbl">Έξοδος</span><svg class="ico2" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2.5H3.5v11H6M10 5l3 3-3 3M13 8H6.5"/></svg></button>
       </div>
     </div>
     <div class="strip" id="strip"></div>
@@ -277,7 +296,8 @@ const DEFAULTS = {
     horizon: 60,
     priceGrowth: 3,        // αύξηση τιμών / έτος
     wageGrowth: 4.5,       // αύξηση μισθών / έτος (κατώτατος → ~1.000 € ως 2028)
-    costGrowth: 3          // πληθωρισμός παγίων / έτος
+    costGrowth: 3,         // πληθωρισμός παγίων / έτος
+    goalNet: 0             // καρτέλα «Ελάχιστα»: ελάχιστο καθαρό που θέλουμε/μήνα
   },
   finance: { loan: 0, rate: 6.5, years: 5, grant: 0, grantMonth: 12 },
   services: [
@@ -390,21 +410,36 @@ function hydrate(o) {
 }
 let S = (() => { try { return hydrate(JSON.parse(ls.get(LS_KEY))); } catch (e) { return clone(DEFAULTS); } })();
 let TAB = ls.get(LS_TAB) || 'overview';
-/* Δύο ξεχωριστά σετ νούμερων: «Τωρινά» (base) και «Στόχος» (target). Το S είναι πάντα αυτό που βλέπεις. */
-const LS_TGT = 'barber.target.v1', LS_VIEW = 'barber.view';
-let ALT = (() => { try { const o = JSON.parse(ls.get(LS_TGT)); return o ? hydrate(o) : null; } catch (e) { return null; } })();
-let VIEW = ls.get(LS_VIEW) === 'target' ? 'target' : 'base';
-if (VIEW === 'target') { if (!ALT) ALT = clone(S); [S, ALT] = [ALT, S]; }
-const baseState = () => VIEW === 'base' ? S : ALT;
-const targetState = () => VIEW === 'target' ? S : ALT;
+/* Τρία ξεχωριστά σετ νούμερων. Το S είναι πάντα αυτό που βλέπεις.
+   base = «Τωρινά» (κοινά), target = «Στόχος» (κοινός), play = «Παίξε» (μόνο σε αυτή τη συσκευή, δεν αποθηκεύεται για τους άλλους). */
+const LS_TGT = 'barber.target.v1', LS_PLAY = 'barber.play.v1', LS_VIEW = 'barber.view';
+const loadLS = k => { try { const o = JSON.parse(ls.get(k)); return o ? hydrate(o) : null; } catch (e) { return null; } };
+const ST = { base: S, target: loadLS(LS_TGT), play: loadLS(LS_PLAY) };
+let VIEW = ['base', 'target', 'play'].includes(ls.get(LS_VIEW)) ? ls.get(LS_VIEW) : 'base';
+if (VIEW !== 'base' && !ST[VIEW]) ST[VIEW] = clone(ST.base);
+S = ST[VIEW];
+const cur = v => v === VIEW ? S : ST[v];
+const baseState = () => cur('base');
+const targetState = () => cur('target');
+function setView(v) {
+  ST[VIEW] = S;
+  VIEW = v;
+  if (!ST[v]) { ST[v] = clone(ST.base); if (v !== 'base') ST[v].locked = false; }
+  S = ST[v];
+  ls.set(LS_VIEW, v);
+}
 const save = () => {
-  ls.set(LS_KEY, JSON.stringify(baseState()));
-  const t = targetState(); if (t) ls.set(LS_TGT, JSON.stringify(t)); else ls.del(LS_TGT);
-  schedulePush();
+  ST[VIEW] = S;
+  ls.set(LS_KEY, JSON.stringify(cur('base')));
+  const t = cur('target'); if (t) ls.set(LS_TGT, JSON.stringify(t)); else ls.del(LS_TGT);
+  const pl = cur('play'); if (pl) ls.set(LS_PLAY, JSON.stringify(pl));
+  if (VIEW !== 'play') schedulePush();
 };
 function applyShared(o) {
   const base = hydrate(o.state), tgt = o.target ? hydrate(o.target) : null;
-  if (VIEW === 'target') { S = tgt || clone(base); ALT = base; } else { S = base; ALT = tgt; }
+  ST.base = base; ST.target = tgt;
+  if (VIEW === 'base') S = base;
+  else if (VIEW === 'target') { S = tgt || clone(base); ST.target = tgt; }
   ls.set(LS_KEY, JSON.stringify(base));
   if (tgt) ls.set(LS_TGT, JSON.stringify(tgt)); else ls.del(LS_TGT);
   ls.set(LS_SCN, JSON.stringify(o.scenarios || {}));
@@ -608,6 +643,7 @@ function toast(t) { const e = $('toast'); e.textContent = t; e.classList.add('on
    ========================================================= */
 const TABS = {
   overview: { label: 'Επισκόπηση', render: rOverview, fill: fOverview },
+  minimums: { label: 'Ελάχιστα', render: rMinimums, fill: fMinimums },
   barbers: { label: 'Κουρείς & τιμές', render: rBarbers, fill: fBarbers },
   coffee: { label: 'Καφέ & λιανική', render: rCoffee, fill: fCoffee },
   capex: { label: 'Έξοδα έναρξης', render: rCapex, fill: fCapex },
@@ -940,6 +976,107 @@ function fOverview(R) {
 }
 
 function niceStep(raw) { const p = Math.pow(10, Math.floor(Math.log10(raw || 1))); const f = raw / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; }
+
+/* ---------- Ελάχιστα: τι χρειάζεται για να μη μπαίνει μέσα το μαγαζί ---------- */
+// μικρότερο x στο [lo,hi] με f(x) >= 0 (f αύξουσα). null αν δεν φτάνει ούτε στο hi.
+function solveMin(f, lo, hi, it = 40) {
+  if (f(hi) < 0) return null;
+  if (f(lo) >= 0) return lo;
+  for (let k = 0; k < it; k++) { const m = (lo + hi) / 2; if (f(m) >= 0) hi = m; else lo = m; }
+  return hi;
+}
+// μεγαλύτερο x στο [lo,hi] με f(x) >= 0 (f φθίνουσα)
+function solveMax(f, lo, hi, it = 40) {
+  if (f(lo) < 0) return null;
+  if (f(hi) >= 0) return hi;
+  for (let k = 0; k < it; k++) { const m = (lo + hi) / 2; if (f(m) >= 0) lo = m; else hi = m; }
+  return lo;
+}
+const withS = (mut) => { const s = clone(S); mut(s); return s; };
+
+function rMinimums() {
+  return `
+  <h2>Ελάχιστα για να μη μπαίνει μέσα</h2>
+  <p class="lead">Πόσα πρέπει να γίνονται τουλάχιστον για να μη χάνει λεφτά το μαγαζί, όταν όλα τα άλλα μένουν όπως τα έχετε βάλει. Υπολογίζεται σε πλήρη λειτουργία, μετά από φόρο και αφού πληρωθούν όλοι.</p>
+  <div class="card">
+    <div class="fields">${field('settings.goalNet', 'Θέλουμε να μένουν καθαρά τουλάχιστον', { suf: '€/μήνα', step: 100, help: '0 = απλώς να μη μπαίνει μέσα' })}</div>
+    <div id="mn-now" class="note"></div>
+  </div>
+  <div class="grid g3 sec" id="mn-cards"></div>
+  <div class="grid g2 sec">
+    <div class="card"><h3>Ελάχιστες τιμές</h3><p class="small" style="margin-top:-6px">Αν ανέβουν όλες οι τιμές με την ίδια αναλογία και τα κουρέματα μείνουν ίδια.</p><div id="mn-prices"></div></div>
+    <div class="card"><h3>Κάθε κουρέας για να βγάζει το κόστος του</h3><p class="small" style="margin-top:-6px">Κουρέματα την ημέρα για να καλύπτει τον μισθό/ποσοστό του, τα αναλώσιμα και το POS. Πάνω από αυτό αρχίζει να πληρώνει ενοίκιο, μπαρίστα και πάγια.</p><div id="mn-barbers"></div></div>
+  </div>`;
+}
+function minCard(title, min, now, fmt, opts = {}) {
+  const ok = min == null ? false : (opts.max ? now <= min : now >= min);
+  const reach = min == null;
+  const margin = !reach && now ? (opts.max ? (min - now) / min : (now - min) / now) : null;
+  const pct = reach ? 0 : Math.max(0, Math.min(100, opts.max ? (now / (min || 1)) * 100 : ((min || 0) / (now || 1)) * 100));
+  return `<div class="card mn ${reach ? 'bad' : ok ? 'ok' : 'bad'}">
+    <span class="small">${title}</span>
+    <b class="big">${reach ? 'δεν φτάνει' : fmt(min)}</b>
+    <div class="mnbar"><div style="width:${Math.min(100, pct)}%"></div></div>
+    <span class="small">σήμερα <b>${fmt(now)}</b>${margin != null ? ` · ${ok ? 'περιθώριο' : 'λείπουν'} ${num(Math.abs(margin) * 100)}%` : ''}</span>
+    ${opts.note ? `<span class="small" style="display:block;margin-top:4px">${opts.note}</span>` : ''}
+  </div>`;
+}
+function fMinimums(R) {
+  const goal = +S.settings.goalNet || 0;
+  const g = st => compute(st).net - goal;
+  const days = S.settings.daysPerMonth;
+  const work = S.barbers.filter(b => b.mode !== 'rent');
+  const avgCpd = work.length ? work.reduce((a, b) => a + (+b.cutsPerDay || 0), 0) / work.length : 0;
+  setHTML('mn-now', `Σήμερα το καθαρό είναι <b class="${sgn(R.net)}">${eur(R.net)}/μήνα</b>${goal ? ` — στόχος ${eur(goal)}` : ''}. ` +
+    (R.net >= goal ? 'Είστε πάνω από το όριο· οι κάρτες δείχνουν πόσο περιθώριο έχετε.' : '<b class="neg">Είστε κάτω από το όριο· οι κάρτες δείχνουν τι πρέπει να αλλάξει.</b>'));
+
+  // 1. κουρέματα/ημέρα ανά κουρέα (όλοι ίδια)
+  const cpd = solveMin(x => g(withS(s => s.barbers.forEach(b => { if (b.mode !== 'rent') b.cutsPerDay = x; }))), 0, 40);
+  const cards = [];
+  cards.push(minCard('Κουρέματα/ημέρα ανά κουρέα', cpd, avgCpd, v => num1(v), { note: `${work.length} κουρείς που εισπράττει το μαγαζί` }));
+  // 2. πελάτες/μήνα
+  const rentCuts = S.barbers.filter(b => b.mode === 'rent').reduce((a, b) => a + (+b.cutsPerDay || 0) * days, 0);
+  cards.push(minCard('Πελάτες/μήνα (όλο το μαγαζί)', cpd == null ? null : cpd * days * work.length + rentCuts, R.clients, v => num(v), { note: `≈ ${cpd == null ? '—' : num((cpd * work.length * days + rentCuts) / days)} την ημέρα` }));
+  // 3. τζίρος με ΦΠΑ
+  const turnAt = cpd == null ? null : compute(withS(s => s.barbers.forEach(b => { if (b.mode !== 'rent') b.cutsPerDay = cpd; }))).grossReceipts;
+  cards.push(minCard('Τζίρος/μήνα (με ΦΠΑ)', turnAt, R.grossReceipts, v => eur(v)));
+  // 4. μέση τιμή
+  const scaleS = f => withS(s => { s.services.forEach(x => { x.price = (+x.price || 0) * f; }); s.barbers.forEach(b => { if (+b.ticket > 0) b.ticket = +b.ticket * f; }); });
+  const fMin = solveMin(f => g(scaleS(f)), 0, 5);
+  cards.push(minCard('Μέση απόδειξη κουρέματος (με ΦΠΑ)', fMin == null ? null : R.avgTicket * fMin, R.avgTicket, v => eur2(v)));
+  // 5. καφέδες
+  if (S.barista.coffeeMode === 'paid' || S.barista.coffeeMode === 'both') {
+    const cups = solveMin(x => g(withS(s => { s.barista.cupsPerDay = x; })), 0, 1000);
+    cards.push(minCard('Καφέδες που πωλούνται/ημέρα', cups, +S.barista.cupsPerDay || 0, v => num(v), { note: `στα ${eur2(S.barista.price)} ο καφές` }));
+  }
+  // 6. μέγιστο ενοίκιο
+  const ri = S.fixed.findIndex(x => /ενοίκ/i.test(x.name));
+  if (ri >= 0) {
+    const maxRent = solveMax(x => g(withS(s => { s.fixed[ri].amount = x; })), 0, 20000);
+    cards.push(minCard('Μέγιστο ενοίκιο που αντέχει', maxRent, +S.fixed[ri].amount || 0, v => eur(v), { max: true, note: `«${esc(S.fixed[ri].name)}»` }));
+  }
+  // 7. μέγιστος μισθός
+  const sal = S.barbers.filter(b => b.mode === 'salary');
+  if (sal.length) {
+    const avgSal = sal.reduce((a, b) => a + (+b.salary || 0), 0) / sal.length;
+    const maxSal = solveMax(x => g(withS(s => s.barbers.forEach(b => { if (b.mode === 'salary') b.salary = x; }))), 0, 10000);
+    cards.push(minCard('Μέγιστος μικτός μισθός κουρέα', maxSal, avgSal, v => eur(v), { max: true, note: `ίδιος για τους ${sal.length} μισθωτούς` }));
+  }
+  setHTML('mn-cards', cards.join(''));
+
+  // ελάχιστες τιμές ανά υπηρεσία
+  setHTML('mn-prices', fMin == null ? '<p class="small neg">Ακόμα και με 5πλάσιες τιμές δεν βγαίνει — το πρόβλημα είναι τα έξοδα ή τα κουρέματα.</p>' :
+    `<table class="tbl"><tr><th>Υπηρεσία</th><th class="num">Σήμερα</th><th class="num">Τουλάχιστον</th></tr>${S.services.map(x => `<tr><td>${esc(x.name)}</td><td class="num">${eur2(x.price)}</td><td class="num ${fMin > 1 ? 'neg' : 'pos'}">${eur2(Math.ceil(x.price * fMin * 2) / 2)}</td></tr>`).join('')}</table>
+    <p class="small">${fMin > 1 ? `Οι τιμές πρέπει να ανέβουν τουλάχιστον ${num1((fMin - 1) * 100)}%.` : `Οι τιμές θα μπορούσαν να πέσουν έως ${num1((1 - fMin) * 100)}% πριν μπει μέσα το μαγαζί.`}</p>`);
+
+  // ανά κουρέα
+  setHTML('mn-barbers', S.barbers.map((b, i) => {
+    if (b.mode === 'rent') return row(`${esc(b.name)} <span class="small">ενοικίαση θέσης</span>`, `πληρώνει ${eur(b.rent)}/μήνα`);
+    const m = solveMin(x => compute(withS(s => { s.barbers[i].cutsPerDay = x; })).barbers[i].contrib, 0, 40);
+    const now = +b.cutsPerDay || 0;
+    return row(`${esc(b.name)} <span class="small">${MODES[b.mode].label}</span>`, m == null ? '<span class="neg">δεν βγαίνει</span>' : `<b class="${now >= m ? 'pos' : 'neg'}">${num1(m)}</b> <span class="small">κουρ./ημέρα · σήμερα ${num1(now)}</span>`);
+  }).join(''));
+}
 
 /* ---------- Barbers ---------- */
 function rBarbers() {
@@ -1379,7 +1516,8 @@ function setSync(st) {
     err: ['var(--neg)', 'χωρίς σύνδεση — οι αλλαγές μένουν τοπικά'],
     denied: ['var(--neg)', 'ο κωδικός σου δεν επιτρέπει αποθήκευση']
   };
-  const [c, txt] = map[st] || map.local;
+  let [c, txt] = map[st] || map.local;
+  if (typeof VIEW !== 'undefined' && VIEW === 'play') { c = 'var(--c1)'; txt = 'παίζεις · δεν αποθηκεύεται'; }
   const el = $('subtitle');
   if (el) el.innerHTML = `<span style="color:${c}">●</span> ${esc(txt)}`;
 }
@@ -1475,7 +1613,7 @@ const F_LABEL = {
   loan: 'δάνειο', rate: 'επιτόκιο', years: 'διάρκεια (έτη)', grant: 'επιδότηση', grantMonth: 'μήνας επιδότησης',
   daysPerMonth: 'ημέρες/μήνα', vatServices: 'ΦΠΑ κουρέματος', vatCoffee: 'ΦΠΑ καφέ', vatProducts: 'ΦΠΑ προϊόντων', employerRate: 'εργοδοτικές εισφορές', salaryMonths: 'μισθοί/έτος',
   cardShare: '% με κάρτα', cardFee: 'προμήθεια POS', consumablePerCut: 'αναλώσιμα/κούρεμα', corpTax: 'φόρος εταιρείας', dividendTax: 'φόρος μερισμάτων', rampMonths: 'μήνες ως πλήρη πελατεία',
-  rampStart: 'πελατεία 1ου μήνα', reserveMonths: 'αποθεματικό (μήνες)', contingencyPct: 'απρόβλεπτα %', horizon: 'ορίζοντας', priceGrowth: 'αύξηση τιμών', wageGrowth: 'αύξηση μισθών', costGrowth: 'αύξηση παγίων'
+  rampStart: 'πελατεία 1ου μήνα', reserveMonths: 'αποθεματικό (μήνες)', contingencyPct: 'απρόβλεπτα %', horizon: 'ορίζοντας', priceGrowth: 'αύξηση τιμών', wageGrowth: 'αύξηση μισθών', costGrowth: 'αύξηση παγίων', goalNet: 'ελάχιστο καθαρό που θέλουμε'
 };
 function fmtV(k, v) {
   if (typeof v === 'boolean') return v ? 'ναι' : 'όχι';
@@ -1578,6 +1716,7 @@ async function loadHistory() {
 async function restoreVersion(id, at) {
   if (S.locked) { toast('Κλειδωμένο — πάτα «Ξεκλείδωμα»'); return; }
   if (!confirm(`Επαναφορά όλων των νούμερων στην έκδοση της ${fmtTime(at)}; Θα ισχύσει για όλους.`)) return;
+  if (VIEW === 'play') setView('base');
   try {
     const r = await rpc('barber_log_get', { p_token: AUTH.token, p_id: +id });
     const o = await decryptObj(r.snapshot);
@@ -1594,21 +1733,33 @@ function renderTabs() {
   $('tabs').innerHTML = Object.entries(TABS).map(([k, t]) => `<button class="${k === TAB ? 'on' : ''}" data-act="tab" data-tab="${k}">${t.label}</button>`).join('');
 }
 const LOCK_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>';
+const PLAY_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1.5" y="4" width="13" height="8" rx="4"/><path d="M4.5 8h3M6 6.5v3"/><circle cx="10.5" cy="7" r=".7" fill="currentColor"/><circle cx="11.8" cy="9" r=".7" fill="currentColor"/></svg>';
 const TARGET_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="3"/><circle cx="8" cy="8" r=".8" fill="currentColor"/></svg>';
 function renderView() {
   if (!TABS[TAB]) TAB = 'overview';
   renderTabs();
   setTimeout(() => { if (TAB === 'history') loadHistory(); }, 0);
   document.body.classList.toggle('target', VIEW === 'target');
-  const vb = $('viewBtn');
+  document.body.classList.toggle('play', VIEW === 'play');
+  const back = `<span class="lbl">← Τωρινά</span><span class="ico">←</span>`;
+  const vb = $('viewBtn'), pb = $('playBtn');
   vb.classList.toggle('on', VIEW === 'target');
-  vb.title = VIEW === 'target' ? 'Πίσω στα τωρινά νούμερα' : 'Δες τον Στόχο: ξεχωριστά νούμερα που θέλετε να πετύχετε';
-  vb.innerHTML = VIEW === 'target' ? `<span class="lbl">← Τωρινά</span><span class="ico">←</span>` : TARGET_SVG + '<span class="lbl">Στόχος</span>';
-  $('view').innerHTML = (VIEW === 'target' ? `<div class="tgtbar"><span class="t">ΣΤΟΧΟΣ</span> <span class="small">— ξεχωριστά νούμερα, όπως θα θέλατε να είναι. Ό,τι αλλάζεις εδώ δεν πειράζει τα τωρινά.</span>
+  vb.title = VIEW === 'target' ? 'Πίσω στα τωρινά νούμερα' : 'Στόχος: κοινά, ξεχωριστά νούμερα που θέλετε να πετύχετε';
+  vb.innerHTML = VIEW === 'target' ? back : TARGET_SVG + '<span class="lbl">Στόχος</span>';
+  pb.classList.toggle('on', VIEW === 'play');
+  pb.title = VIEW === 'play' ? 'Πίσω στα τωρινά νούμερα' : 'Παίξε: δοκίμασε νούμερα μόνο για σένα, χωρίς να αλλάξει τίποτα για τους άλλους';
+  pb.innerHTML = VIEW === 'play' ? back : PLAY_SVG + '<span class="lbl">Παίξε</span>';
+  const locked = !!S.locked && VIEW !== 'play';
+  const bar = VIEW === 'target' ? `<div class="tgtbar"><span class="t">ΣΤΟΧΟΣ</span> <span class="small">— κοινά, ξεχωριστά νούμερα, όπως θα θέλατε να είναι. Ό,τι αλλάζεις εδώ δεν πειράζει τα τωρινά.</span>
     <div class="cmp" id="tgtcmp"></div>
-    <div class="btns"><button class="btn" data-act="view">← Πίσω στα τωρινά</button><button class="btn sec2" data-act="tgtReset">Ξανά από τα τωρινά</button></div></div>` : '') + (S.locked ? `<div class="lockbar"><span>${LOCK_SVG}Κλειδωμένο — τα νούμερα δεν αλλάζουν.</span><button class="btn sec2" data-act="lock">Ξεκλείδωμα</button></div>` : '') + TABS[TAB].render();
-  document.body.classList.toggle('locked', !!S.locked);
-  if (S.locked) $('view').querySelectorAll('[data-k]').forEach(e => { e.disabled = true; });
+    <div class="btns"><button class="btn" data-act="view">← Πίσω στα τωρινά</button><button class="btn sec2" data-act="tgtReset">Ξανά από τα τωρινά</button></div></div>`
+    : VIEW === 'play' ? `<div class="tgtbar playbar"><span class="t">ΠΑΙΞΕ</span> <span class="small">— μόνο για σένα. Άλλαξε ό,τι θέλεις· τίποτα δεν αποθηκεύεται για τους άλλους και δεν μπαίνει στο ιστορικό.</span>
+    <div class="cmp" id="tgtcmp"></div>
+    <div class="btns"><button class="btn" data-act="play">← Πίσω στα τωρινά</button><button class="btn sec2" data-act="playReset">Ξανά από τα τωρινά</button><button class="btn sec2" data-act="playFromTarget">Πάρε τον Στόχο</button><button class="btn sec2" data-act="playToTarget">Κάν' το Στόχο</button></div></div>` : '';
+  $('view').innerHTML = bar + (locked ? `<div class="lockbar"><span>${LOCK_SVG}Κλειδωμένο — τα νούμερα δεν αλλάζουν.</span><button class="btn sec2" data-act="lock">Ξεκλείδωμα</button></div>` : '') + TABS[TAB].render();
+  document.body.classList.toggle('locked', locked);
+  if (locked) $('view').querySelectorAll('[data-k]').forEach(e => { e.disabled = true; });
+  if (VIEW === 'play') setSync(sync.state);
   const lb = $('lockBtn');
   lb.innerHTML = LOCK_SVG + `<span class="lbl">${S.locked ? 'Κλειδωμένο' : 'Κλείδωμα'}</span>`;
   lb.classList.toggle('on', !!S.locked);
@@ -1635,7 +1786,7 @@ function refresh() {
   ].map(([l, v, t]) => `<div class="st"${t ? ` data-tip="${attr(t)}"` : ''}><span>${l}</span><b>${v}</b></div>`).join('');
   document.querySelectorAll('[data-show]').forEach(e => { e.textContent = getPath(S, e.dataset.show); });
   TABS[TAB].fill(R);
-  if (VIEW === 'target' && $('tgtcmp')) {
+  if (VIEW !== 'base' && $('tgtcmp')) {
     const B = baseState(), RB = compute(B), CB = capexTotals(B, RB), FB = cashflow(B, CB);
     const S0 = S; S = B; const BB = breakeven(B); S = S0; const BT = breakeven(S);
     const d = (a, b, inv) => { const x = a - b; if (Math.abs(x) < 0.5) return ''; const good = inv ? x < 0 : x > 0; return `<em class="${good ? 'pos' : 'neg'}">${x > 0 ? '+' : '−'}${eur(Math.abs(x))}</em>`; };
@@ -1651,7 +1802,7 @@ function refresh() {
 document.addEventListener('input', e => {
   if (e.target.id === 'histLogins') { ls.set('barber.histLogins', e.target.checked ? '1' : '0'); loadHistory(); return; }
   const el = e.target.closest('[data-k]');
-  if (!el || S.locked) return;
+  if (!el || (S.locked && VIEW !== 'play')) return;
   const t = el.dataset.t;
   let v;
   if (t === 'b') v = el.checked;
@@ -1668,19 +1819,35 @@ document.addEventListener('input', e => {
 const blankBarber = n => ({ name: `Κουρέας ${n}`, mode: 'salary', cutsPerDay: 8, ticket: 0, salary: 1100, bonusPct: 0, rent: 400, barberPct: 50, turnPct: 0, turnBase: 'shop' });
 const ACTIONS = {
   view: () => {
-    if (VIEW === 'base') {
-      if (!ALT) { ALT = clone(S); toast('Ο Στόχος ξεκινά ως αντίγραφο των τωρινών — άλλαξε ό,τι θέλεις'); }
-      [S, ALT] = [ALT, S]; VIEW = 'target';
-    } else { [S, ALT] = [ALT, S]; VIEW = 'base'; toast('Τωρινά νούμερα'); }
-    ls.set(LS_VIEW, VIEW); window.scrollTo({ top: 0 });
+    if (VIEW === 'target') { setView('base'); toast('Τωρινά νούμερα'); }
+    else {
+      const isNew = !cur('target');
+      setView('target');
+      if (isNew) { S.locked = !!cur('base').locked; toast('Ο Στόχος ξεκινά ως αντίγραφο των τωρινών — άλλαξε ό,τι θέλεις'); }
+    }
+    window.scrollTo({ top: 0 });
+  },
+  play: () => {
+    if (VIEW === 'play') { setView('base'); toast('Τωρινά νούμερα'); }
+    else { const isNew = !cur('play'); setView('play'); if (isNew) toast('Παίξε: αντίγραφο των τωρινών, μόνο για σένα'); }
+    window.scrollTo({ top: 0 });
+  },
+  playReset: () => { if (!confirm('Να ξαναγίνουν τα νούμερα του «Παίξε» ίδια με τα τωρινά;')) return false; S = clone(cur('base')); S.locked = false; toast('Ξανά από τα τωρινά'); },
+  playFromTarget: () => { if (!cur('target')) { toast('Δεν υπάρχει Στόχος ακόμα'); return false; } if (!confirm('Να αντιγραφεί ο Στόχος στο «Παίξε»;')) return false; S = clone(cur('target')); S.locked = false; toast('Αντιγράφηκε ο Στόχος'); },
+  playToTarget: () => {
+    if (cur('base').locked) { toast('Κλειδωμένο — ξεκλείδωσε πρώτα'); return false; }
+    if (!confirm('Ο Στόχος θα γίνει ίδιος με αυτά τα νούμερα, για όλους. Συνέχεια;')) return false;
+    ST.target = clone(S); ST.target.locked = !!cur('base').locked; save(); schedulePush(); toast('Ο Στόχος ενημερώθηκε για όλους'); return false;
   },
   tgtReset: () => {
     if (VIEW !== 'target' || !confirm('Ο Στόχος θα γίνει ξανά ίδιος με τα τωρινά νούμερα. Συνέχεια;')) return false;
-    S = clone(ALT); toast('Ο Στόχος αντιγράφηκε από τα τωρινά');
+    S = clone(cur('base')); toast('Ο Στόχος αντιγράφηκε από τα τωρινά');
   },
   lock: () => {
-    if (S.locked && !confirm('Ξεκλείδωμα; Οι αλλαγές θα φαίνονται σε όλους τους εταίρους.')) return false;
-    S.locked = !S.locked; if (ALT) ALT.locked = S.locked; toast(S.locked ? 'Κλειδώθηκε για όλους' : 'Ξεκλειδώθηκε');
+    const b = cur('base'), v = !b.locked;
+    if (!v && !confirm('Ξεκλείδωμα; Οι αλλαγές θα φαίνονται σε όλους τους εταίρους.')) return false;
+    b.locked = v; const t = cur('target'); if (t) t.locked = v;
+    save(); schedulePush(); renderView(); toast(v ? 'Κλειδώθηκε για όλους' : 'Ξεκλειδώθηκε'); return false;
   },
   histReload: () => { loadHistory(); return false; },
   restore: d => { restoreVersion(d.id, d.at); return false; },
@@ -1726,7 +1893,7 @@ document.addEventListener('click', e => {
   if (!el) return;
   const fn = ACTIONS[el.dataset.act];
   if (!fn) return;
-  if (S.locked && /^(add|del|reset|import|loadScn|tgtReset)/.test(el.dataset.act)) { e.preventDefault(); toast('Κλειδωμένο — πάτα «Ξεκλείδωμα»'); return; }
+  if (S.locked && VIEW !== 'play' && /^(add|del|reset|import|loadScn|tgtReset)/.test(el.dataset.act)) { e.preventDefault(); toast('Κλειδωμένο — πάτα «Ξεκλείδωμα»'); return; }
   e.preventDefault();
   const r = fn(el.dataset);
   if (r === false) return;
