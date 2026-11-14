@@ -270,7 +270,7 @@ const DEFAULTS = {
     { name: 'Κουρέας 4', mode: 'salary', cutsPerDay: 9, ticket: 0, salary: 1100, bonusPct: 0, rent: 400, barberPct: 50 },
     { name: 'Κουρέας 5', mode: 'rent', cutsPerDay: 8, ticket: 0, salary: 1100, bonusPct: 0, rent: 400, barberPct: 50 }
   ],
-  barista: { enabled: true, salary: 920, fte: 100, coffeeMode: 'both', price: 2.0, cupsPerDay: 20, takeRate: 60, costPerCup: 0.45 },
+  barista: { enabled: true, salary: 920, fte: 100, coffeeMode: 'both', freeAll: true, price: 2.0, cupsPerDay: 20, takeRate: 60, costPerCup: 0.45 },
   retail: { sales: 400, margin: 40 },
   fixed: [
     { name: 'Ενοίκιο (75 τ.μ.)', amount: 550, note: 'Εύρος 500–600 €' },
@@ -435,7 +435,7 @@ function compute(s, opt = {}) {
   let cups = 0, freeCups = 0, paidCups = 0, coffeeGross = 0;
   if (ba.enabled) { cost.barista = (+ba.salary || 0) * gW * sm * er * (+ba.fte || 0) / 100; payrollBase += cost.barista; }
   // free = κερασμένος στους πελάτες, paid = πωλείται, both = πωλείται + κερασμένος στους πελάτες του κουρείου
-  if (ba.coffeeMode === 'free' || ba.coffeeMode === 'both') freeCups = clients * (+ba.takeRate || 0) / 100;
+  if (ba.coffeeMode === 'free' || ba.coffeeMode === 'both') freeCups = clients * (ba.freeAll ? 100 : (+ba.takeRate || 0)) / 100;
   if (ba.coffeeMode === 'paid' || ba.coffeeMode === 'both') {
     paidCups = (+ba.cupsPerDay || 0) * k * st.daysPerMonth;
     coffeeGross = paidCups * (+ba.price || 0) * gP;
@@ -949,7 +949,7 @@ function rCoffee() {
       <h3>Καφές</h3>
       ${select('barista.coffeeMode', [['both', 'Πωλείται + κερασμένος στους πελάτες'], ['free', 'Μόνο κερασμένος στους πελάτες'], ['paid', 'Μόνο πωλείται'], ['none', 'Χωρίς καφέ']])}
       <div class="fields" style="margin-top:10px">
-        ${b.coffeeMode === 'free' || b.coffeeMode === 'both' ? field('barista.takeRate', 'Πελάτες κουρείου που παίρνουν δωρεάν καφέ', { suf: '%', step: 5 }) : ''}
+        ${b.coffeeMode === 'free' || b.coffeeMode === 'both' ? `<div style="grid-column:1/-1">${check('barista.freeAll', 'Δωρεάν καφές σε όλους όσοι κουρεύονται', true)}</div>` + (b.freeAll ? '' : field('barista.takeRate', 'Πελάτες κουρείου που παίρνουν δωρεάν καφέ', { suf: '%', step: 5 })) : ''}
         ${b.coffeeMode === 'paid' || b.coffeeMode === 'both' ? field('barista.price', 'Τιμή πώλησης (με ΦΠΑ)', { suf: '€', step: 0.1 }) + field('barista.cupsPerDay', 'Καφέδες που πωλούνται / ημέρα', { suf: 'τεμ.', step: 1, help: b.coffeeMode === 'both' ? 'Εκτός από τους κερασμένους' : '' }) : ''}
         ${b.coffeeMode !== 'none' ? field('barista.costPerCup', 'Κόστος ανά καφέ', { suf: '€', step: 0.05, help: 'Καφές, γάλα, ποτήρι, ζάχαρη' }) : ''}
       </div>
@@ -1401,7 +1401,7 @@ const SEC_LABEL = { barbers: 'Κουρέας', services: 'Υπηρεσία', cap
 const F_LABEL = {
   cutsPerDay: 'κουρέματα/ημέρα', salary: 'μισθός', bonusPct: 'bonus %', rent: 'ενοίκιο θέσης', barberPct: 'ποσοστό κουρέα', ticket: 'μέση τιμή', mode: 'μοντέλο',
   name: 'όνομα', amount: 'ποσό', on: 'ενεργό', price: 'τιμή', mix: '% πελατών', capPct: '% κεφαλαίου', share: '% κερδών', role: 'ρόλος', note: 'σημείωση', cat: 'κατηγορία',
-  enabled: 'μπαρίστα', fte: 'απασχόληση %', coffeeMode: 'καφές', cupsPerDay: 'καφέδες/ημέρα', takeRate: '% που παίρνουν καφέ', costPerCup: 'κόστος/καφέ', sales: 'πωλήσεις', margin: 'περιθώριο %',
+  enabled: 'μπαρίστα', fte: 'απασχόληση %', coffeeMode: 'καφές', cupsPerDay: 'καφέδες/ημέρα', takeRate: '% που παίρνουν καφέ', freeAll: 'δωρεάν καφές σε όλους τους πελάτες', costPerCup: 'κόστος/καφέ', sales: 'πωλήσεις', margin: 'περιθώριο %',
   loan: 'δάνειο', rate: 'επιτόκιο', years: 'διάρκεια (έτη)', grant: 'επιδότηση', grantMonth: 'μήνας επιδότησης',
   daysPerMonth: 'ημέρες/μήνα', vatServices: 'ΦΠΑ κουρέματος', vatCoffee: 'ΦΠΑ καφέ', vatProducts: 'ΦΠΑ προϊόντων', employerRate: 'εργοδοτικές εισφορές', salaryMonths: 'μισθοί/έτος',
   cardShare: '% με κάρτα', cardFee: 'προμήθεια POS', consumablePerCut: 'αναλώσιμα/κούρεμα', corpTax: 'φόρος εταιρείας', dividendTax: 'φόρος μερισμάτων', rampMonths: 'μήνες ως πλήρη πελατεία',
