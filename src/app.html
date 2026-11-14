@@ -340,7 +340,7 @@ const MODES = {
   salary: { label: 'Μισθωτός', help: 'Το μαγαζί εισπράττει όλο τον τζίρο και πληρώνει μισθό + εισφορές (+ προαιρετικό ποσοστό).' },
   commission: { label: 'Ποσοστό', help: 'Ο κουρέας (με μπλοκάκι) παίρνει ποσοστό από κάθε κούρεμα. Χωρίς μισθό, χωρίς εισφορές για το μαγαζί.' },
   rent: { label: 'Ενοικίαση θέσης', help: 'Ο κουρέας πληρώνει σταθερό νοίκι για την καρέκλα και κρατά τον τζίρο του. Φέρνει δικά του εργαλεία & αναλώσιμα.' },
-  partner: { label: 'Εταίρος', help: 'Δουλεύει χωρίς μισθό· αμείβεται από το μερίδιο κερδών.' }
+  partner: { label: 'Εταίρος', help: 'Δουλεύει χωρίς μισθό. Αμείβεται με ποσοστό επί του τζίρου και/ή με μερίδιο από τα κέρδη (καρτέλα «Εταίροι»).' }
 };
 
 /* =========================================================
@@ -456,7 +456,7 @@ function compute(s, opt = {}) {
         r.barberEarn = r.staff;
         r.barberNote = 'πριν από δικό του ΕΦΚΑ & φόρο';
       } else {
-        r.barberNote = 'αμείβεται από τα κέρδη';
+        r.barberNote = (+b.turnPct > 0) ? `${num1(b.turnPct)}% επί του τζίρου ${b.turnBase === 'own' ? 'των κουρεμάτων του' : 'όλου του μαγαζιού'} (χωρίς ΦΠΑ)` : 'αμείβεται από τα κέρδη';
       }
     }
     r.contrib = r.shopRev - r.staff - r.consum - r.card;
@@ -488,6 +488,14 @@ function compute(s, opt = {}) {
   cost.fixed = s.fixed.reduce((a, x) => a + (+x.amount || 0), 0) * gC;
 
   const revenue = rev.services + rev.chairRent + rev.coffee + rev.retail;
+  // εταίροι με ποσοστό επί του τζίρου (π.χ. Πάνος 15%) — καθαρός τζίρος χωρίς ΦΠΑ
+  cost.partner = 0;
+  barbers.forEach((r, i) => {
+    const b = s.barbers[i];
+    if (r.mode !== 'partner' || !(+b.turnPct > 0)) return;
+    const fee = (b.turnBase === 'own' ? r.net : revenue) * (+b.turnPct) / 100;
+    r.partnerFee = fee; r.barberEarn = fee; r.contrib -= fee; cost.partner += fee;
+  });
   const costs = Object.values(cost).reduce((a, b) => a + b, 0);
   const preTax = revenue - costs;
   const tax = Math.max(0, preTax) * st.corpTax / 100;
@@ -790,6 +798,7 @@ function fOverview(R) {
     (r.retail ? row('Πωλήσεις προϊόντων', eur(r.retail)) : '') +
     row('Σύνολο εσόδων', eur(R.revenue), 'sub') +
     row('Μισθοί & αμοιβές κουρέων', '−' + eur(c.staff)) +
+    (c.partner ? row(`Αμοιβή εταίρων επί τζίρου (${R.barbers.filter(b => b.partnerFee).map(b => esc(b.name)).join(', ')})`, '−' + eur(c.partner)) : '') +
     (c.barista ? row('Μπαρίστα (με εισφορές)', '−' + eur(c.barista)) : '') +
     row('Πάγια (ενοίκιο, ρεύμα, λογιστής…)', '−' + eur(c.fixed)) +
     row('Αναλώσιμα κουρείου', '−' + eur(c.consum)) +
@@ -839,8 +848,9 @@ function fOverview(R) {
     { name: 'Κουρείς (μισθοί/ποσοστά)', value: c.staff, color: SER[0] },
     { name: 'Πάγια', value: c.fixed, color: SER[1] },
     { name: 'Μπαρίστα', value: c.barista, color: SER[2] },
+    { name: 'Εταίροι (% τζίρου)', value: c.partner || 0, color: SER[4] },
     { name: 'Αναλώσιμα, καφές, προϊόντα', value: c.consum + c.coffee + c.retail, color: SER[3] },
-    { name: 'Προμήθειες καρτών', value: c.card, color: SER[4] },
+    { name: 'Προμήθειες καρτών', value: c.card, color: SER[7] },
     { name: 'Φόρος', value: R.tax, color: SER[6] },
     { name: R.net >= 0 ? 'Καθαρό κέρδος' : 'Ζημιά', value: Math.max(0, R.net), color: SER[5] }
   ].filter(p => p.value > 0.5);
@@ -934,6 +944,8 @@ function barberCard(b, i) {
   if (b.mode === 'salary') f = field(`${p}.salary`, 'Μικτός μισθός', { suf: '€/μήνα', step: 10, help: 'Κατώτατος: 920 €' }) + field(`${p}.bonusPct`, 'Bonus επί τζίρου', { suf: '%', step: 1, help: 'Προαιρετικό κίνητρο' });
   else if (b.mode === 'commission') f = field(`${p}.barberPct`, 'Ποσοστό κουρέα', { suf: '%', step: 1, help: 'Επί του καθαρού (χωρίς ΦΠΑ)' });
   else if (b.mode === 'rent') f = field(`${p}.rent`, 'Ενοίκιο θέσης', { suf: '€/μήνα', step: 10 });
+  else if (b.mode === 'partner') f = field(`${p}.turnPct`, 'Ποσοστό επί του τζίρου', { suf: '%', step: 0.5, help: 'Χωρίς ΦΠΑ · 0 = μόνο μερίδιο κερδών' }) +
+    `<label class="f"><span>Τζίρος από</span>${select(`${p}.turnBase`, [['shop', 'Όλο το μαγαζί'], ['own', 'Μόνο τα δικά του κουρέματα']])}</label>`;
   return `<div class="card bc">
     <div class="hd">${textIn(`${p}.name`, 'name')}<button class="x" data-act="delBarber" data-i="${i}" title="Αφαίρεση">×</button></div>
     ${select(`${p}.mode`, Object.entries(MODES).map(([k, m]) => [k, m.label]))}
@@ -950,14 +962,14 @@ function fBarbers(R) {
     <div><span>Πελάτες/μήνα</span><b>${num(b.cuts)}</b></div>
     <div><span>Τζίρος (με ΦΠΑ)</span><b>${eur(b.gross)}</b></div>
     <div><span>Μένει στο μαγαζί</span><b class="${sgn(b.contrib)}">${eur(b.contrib)}</b></div>
-    <div><span>Παίρνει ο ίδιος</span><b>${b.mode === 'partner' ? '—' : eur(b.barberEarn)}</b></div>
-    <div style="grid-column:1/-1"><span>${b.mode === 'partner' ? 'Εταίρος' : esc(b.barberNote)}</span></div>`));
+    <div><span>Παίρνει ο ίδιος</span><b>${b.mode === 'partner' && !b.partnerFee ? '—' : eur(b.barberEarn)}</b></div>
+    <div style="grid-column:1/-1"><span>${esc(b.barberNote)}</span></div>`));
   const mx = Math.max(1, ...R.barbers.flatMap(b => [Math.abs(b.contrib), Math.max(0, b.barberEarn)]));
   setHTML('bb-chart', legend([['var(--c1)', 'Μένει στο μαγαζί', 'sq'], ['var(--c2)', 'Παίρνει ο κουρέας', 'sq']]) + R.barbers.map(b => {
-    const tip = attr(tipHTML(`${esc(b.name)} · ${MODES[b.mode].label}`, [['', 'Πελάτες/μήνα', num(b.cuts)], ['', 'Τζίρος με ΦΠΑ', eur(b.gross)], ['var(--c1)', 'Μένει στο μαγαζί', eur(b.contrib)], ['var(--c2)', 'Παίρνει ο κουρέας', b.mode === 'partner' ? '—' : eur(b.barberEarn)]]));
+    const tip = attr(tipHTML(`${esc(b.name)} · ${MODES[b.mode].label}`, [['', 'Πελάτες/μήνα', num(b.cuts)], ['', 'Τζίρος με ΦΠΑ', eur(b.gross)], ['var(--c1)', 'Μένει στο μαγαζί', eur(b.contrib)], ['var(--c2)', 'Παίρνει ο κουρέας', b.mode === 'partner' && !b.partnerFee ? '—' : eur(b.barberEarn)]]));
     return `<div class="hb" data-tip="${tip}"><div class="nm"><span>${esc(b.name)} <span class="mode">${MODES[b.mode].label}</span></span><span class="small">${num(b.cuts)} πελάτες</span></div>
       <div class="tr2"><div class="bar" style="width:${Math.abs(b.contrib) / mx * 75}%;background:${b.contrib >= 0 ? 'var(--c1)' : 'var(--neg)'}"></div><span class="v">${eur(b.contrib)}</span></div>
-      <div class="tr2"><div class="bar" style="width:${Math.max(0, b.barberEarn) / mx * 75}%;background:var(--c2)"></div><span class="v">${b.mode === 'partner' ? 'εταίρος' : eur(b.barberEarn)}</span></div></div>`;
+      <div class="tr2"><div class="bar" style="width:${Math.max(0, b.barberEarn) / mx * 75}%;background:var(--c2)"></div><span class="v">${b.mode === 'partner' && !b.partnerFee ? 'εταίρος' : eur(b.barberEarn)}</span></div></div>`;
   }).join(''));
   const t = R.barbers.reduce((a, b) => ({ cuts: a.cuts + b.cuts, gross: a.gross + b.gross, contrib: a.contrib + b.contrib }), { cuts: 0, gross: 0, contrib: 0 });
   setHTML('bb-sum', `<table class="tbl"><tr><th>Κουρέας</th><th>Μοντέλο</th><th class="num">Πελάτες</th><th class="num">Τζίρος με ΦΠΑ</th><th class="num">Κόστος για μαγαζί</th><th class="num">Μένει στο μαγαζί</th></tr>
@@ -1197,7 +1209,7 @@ const LIST_SECTIONS = { capex: 'Έξοδα έναρξης', fixed: 'Μηνιαί
 const MODE_ALIASES = { salary: 'salary', 'μισθωτός': 'salary', 'μισθωτος': 'salary', 'μισθός': 'salary', commission: 'commission', 'ποσοστό': 'commission', 'ποσοστο': 'commission', rent: 'rent', 'ενοικίαση': 'rent', 'ενοικιαση': 'rent', 'ενοικίαση θέσης': 'rent', partner: 'partner', 'εταίρος': 'partner', 'εταιρος': 'partner' };
 const COFFEE_ALIASES = { free: 'free', 'κερασμένος': 'free', paid: 'paid', 'πωλείται': 'paid', both: 'both', mixed: 'both', 'και τα δύο': 'both', 'μικτό': 'both', none: 'none', 'χωρίς': 'none' };
 const FIELD_MAP = {
-  barber: { mode: 'mode', cutsperday: 'cutsPerDay', cuts: 'cutsPerDay', salary: 'salary', bonuspct: 'bonusPct', bonus: 'bonusPct', rent: 'rent', barberpct: 'barberPct', commissionpct: 'barberPct', commission: 'barberPct', ticket: 'ticket' },
+  barber: { turnpct: 'turnPct', turnoverpct: 'turnPct', turnbase: 'turnBase', mode: 'mode', cutsperday: 'cutsPerDay', cuts: 'cutsPerDay', salary: 'salary', bonuspct: 'bonusPct', bonus: 'bonusPct', rent: 'rent', barberpct: 'barberPct', commissionpct: 'barberPct', commission: 'barberPct', ticket: 'ticket' },
   partner: { cappct: 'capPct', capital: 'capPct', share: 'share', profitpct: 'share', sharepct: 'share', role: 'role' },
   service: { price: 'price', mix: 'mix', mixpct: 'mix' },
   capex: { amount: 'amount', on: 'on', enabled: 'on' },
@@ -1430,7 +1442,7 @@ async function push() {
 /* ---------- human-readable diff for the history ---------- */
 const SEC_LABEL = { barbers: 'Κουρέας', services: 'Υπηρεσία', capex: 'Έξοδο έναρξης', fixed: 'Πάγιο', partners: 'Εταίρος', settings: 'Παραδοχές', barista: 'Μπαρίστα/καφές', retail: 'Λιανική', finance: 'Χρηματοδότηση' };
 const F_LABEL = {
-  cutsPerDay: 'κουρέματα/ημέρα', salary: 'μισθός', bonusPct: 'bonus %', rent: 'ενοίκιο θέσης', barberPct: 'ποσοστό κουρέα', ticket: 'μέση τιμή', mode: 'μοντέλο',
+  cutsPerDay: 'κουρέματα/ημέρα', salary: 'μισθός', bonusPct: 'bonus %', rent: 'ενοίκιο θέσης', barberPct: 'ποσοστό κουρέα', turnPct: '% επί τζίρου', turnBase: 'τζίρος από', ticket: 'μέση τιμή', mode: 'μοντέλο',
   name: 'όνομα', amount: 'ποσό', on: 'ενεργό', price: 'τιμή', mix: '% πελατών', capPct: '% κεφαλαίου', share: '% κερδών', role: 'ρόλος', note: 'σημείωση', cat: 'κατηγορία',
   enabled: 'μπαρίστα', fte: 'απασχόληση %', coffeeMode: 'καφές', cupsPerDay: 'καφέδες/ημέρα', takeRate: '% που παίρνουν καφέ', freeAll: 'δωρεάν καφές σε όλους τους πελάτες', costPerCup: 'κόστος/καφέ', sales: 'πωλήσεις', margin: 'περιθώριο %',
   loan: 'δάνειο', rate: 'επιτόκιο', years: 'διάρκεια (έτη)', grant: 'επιδότηση', grantMonth: 'μήνας επιδότησης',
@@ -1441,6 +1453,7 @@ const F_LABEL = {
 function fmtV(k, v) {
   if (typeof v === 'boolean') return v ? 'ναι' : 'όχι';
   if (k === 'mode') return (MODES[v] || {}).label || v;
+  if (k === 'turnBase') return { shop: 'όλο το μαγαζί', own: 'δικά του κουρέματα' }[v] || v;
   if (k === 'coffeeMode') return { free: 'κερασμένος', paid: 'πωλείται', both: 'πωλείται + κερασμένος', none: 'χωρίς' }[v] || v;
   if (typeof v === 'number') return num1(v);
   return `«${v ?? ''}»`;
@@ -1615,7 +1628,7 @@ document.addEventListener('input', e => {
   if (el.hasAttribute('data-rr')) renderView(); else refreshSoon();
 });
 
-const blankBarber = n => ({ name: `Κουρέας ${n}`, mode: 'salary', cutsPerDay: 8, ticket: 0, salary: 1100, bonusPct: 0, rent: 400, barberPct: 50 });
+const blankBarber = n => ({ name: `Κουρέας ${n}`, mode: 'salary', cutsPerDay: 8, ticket: 0, salary: 1100, bonusPct: 0, rent: 400, barberPct: 50, turnPct: 0, turnBase: 'shop' });
 const ACTIONS = {
   view: () => {
     if (VIEW === 'base') {
