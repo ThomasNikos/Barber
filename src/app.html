@@ -163,6 +163,9 @@ svg text{fill:var(--muted);font-size:12px;font-family:inherit}
 .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
 .toast.on{opacity:1}
 @media (max-width:600px){
+  .strip{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 12px;overflow:visible}
+  .st b{font-size:15px}
+  .st>span{font-size:9.5px}
   #lockBtn .lbl{display:none}
   #lockBtn svg{margin-right:0}
   h2{font-size:19px}
