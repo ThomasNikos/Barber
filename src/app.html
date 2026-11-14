@@ -126,6 +126,12 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .tbl .inp{min-width:90px}
 .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .cap-item{display:grid;grid-template-columns:24px 1fr 120px 28px;gap:6px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--line)}
+.capx{grid-template-columns:24px 1fr auto 28px;padding:6px 0}
+.capx .cxt{white-space:nowrap;font-size:15px}
+.capx .qu{grid-column:2/4;display:flex;align-items:center;gap:6px}
+.qu .q{width:92px}
+.qu .u{width:140px}
+.capx .nt{grid-column:2/4}
 .cap-item .nt{grid-column:2/4;font-size:12px;color:var(--muted);margin-top:-4px}
 .cap-item.off{opacity:.5}
 .cathd{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
@@ -162,10 +168,9 @@ svg text{fill:var(--muted);font-size:12px;font-family:inherit}
   h2{font-size:19px}
   .kpi b{font-size:19px}
   .card{padding:13px}
-  .capx{grid-template-columns:22px 1fr 26px}
-  .capx .inp{grid-column:2;grid-row:2;max-width:170px}
-  .capx .x{grid-column:3;grid-row:1}
-  .capx .nt{grid-column:2;margin-top:0}
+  .capx{grid-template-columns:22px 1fr auto 26px}
+  .qu .q{width:84px}
+  .qu .u{width:124px}
 }
 .ghost.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .ghost svg{width:13px;height:13px;vertical-align:-2px;margin-right:4px}
@@ -353,15 +358,32 @@ const ls = {
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
   del(k) { try { localStorage.removeItem(k); } catch (e) {} }
 };
+/* Έξοδα έναρξης: τεμάχια × τιμή τεμαχίου = ποσό. Παλιές εγγραφές χωρίς τεμάχια μετατρέπονται
+   (π.χ. «Πολυθρόνες ×5» 3.250 € → 5 × 650 €). */
+function normCapex(x) {
+  if (x.unit == null || x.unit === '') {
+    let q = +x.qty || 0;
+    if (!q) {
+      const m = String(x.name || '').match(/\s*[×xX]\s*(\d+)\s*$/) || String(x.name || '').match(/\s+(\d+)\s*τεμ(?:άχια|\.)?\s*$/) || String(x.name || '').match(/\s*\((\d+)\s*(?:μονάδες|τεμ(?:άχια|\.)?)\)\s*$/);
+      if (m) { q = +m[1]; x.name = x.name.replace(m[0], ''); }
+    }
+    x.qty = q || 1;
+    x.unit = Math.round((+x.amount || 0) / x.qty * 100) / 100;
+  }
+  x.qty = +x.qty || 0; x.unit = +x.unit || 0;
+  x.amount = Math.round(x.qty * x.unit * 100) / 100;
+  return x;
+}
 function hydrate(o) {
   const d = clone(DEFAULTS);
-  if (!o || o.v !== 1) return d;
-  return Object.assign(d, o, {
+  const r = (!o || o.v !== 1) ? d : Object.assign(d, o, {
     settings: Object.assign(d.settings, o.settings || {}),
     barista: Object.assign(d.barista, o.barista || {}),
     retail: Object.assign(d.retail, o.retail || {}),
     finance: Object.assign(d.finance, o.finance || {})
   });
+  (r.capex || []).forEach(normCapex);
+  return r;
 }
 let S = (() => { try { return hydrate(JSON.parse(ls.get(LS_KEY))); } catch (e) { return clone(DEFAULTS); } })();
 let TAB = ls.get(LS_TAB) || 'overview';
@@ -1035,8 +1057,9 @@ function rCapex() {
       ${S.capex.map((x, i) => x.cat !== cat ? '' : `<div class="cap-item capx ${x.on ? '' : 'off'}">
         <input type="checkbox" data-k="capex.${i}.on" data-t="b" data-rr${x.on ? ' checked' : ''} style="accent-color:var(--accent)">
         ${textIn(`capex.${i}.name`)}
-        <div class="inp"><input type="number" step="50" data-k="capex.${i}.amount" data-t="n" value="${x.amount}"><i>€</i></div>
+        <b class="cxt" id="cxa-${i}">${eur(x.amount)}</b>
         <button class="x" data-act="delCapex" data-i="${i}" title="Διαγραφή">×</button>
+        <div class="qu"><div class="inp q"><input type="number" inputmode="numeric" step="1" min="0" data-k="capex.${i}.qty" data-t="n" value="${x.qty}"><i>τεμ.</i></div><span class="mut">×</span><div class="inp u"><input type="number" inputmode="decimal" step="10" min="0" data-k="capex.${i}.unit" data-t="n" value="${x.unit}"><i>€/τεμ.</i></div></div>
         ${x.note ? `<div class="nt">${esc(x.note)}</div>` : ''}
       </div>`).join('')}
       <button class="btn sec2" style="margin-top:10px" data-act="addCapex" data-cat="${esc(cat)}">+ Έξοδο</button>
@@ -1212,7 +1235,7 @@ const FIELD_MAP = {
   barber: { turnpct: 'turnPct', turnoverpct: 'turnPct', turnbase: 'turnBase', mode: 'mode', cutsperday: 'cutsPerDay', cuts: 'cutsPerDay', salary: 'salary', bonuspct: 'bonusPct', bonus: 'bonusPct', rent: 'rent', barberpct: 'barberPct', commissionpct: 'barberPct', commission: 'barberPct', ticket: 'ticket' },
   partner: { cappct: 'capPct', capital: 'capPct', share: 'share', profitpct: 'share', sharepct: 'share', role: 'role' },
   service: { price: 'price', mix: 'mix', mixpct: 'mix' },
-  capex: { amount: 'amount', on: 'on', enabled: 'on' },
+  capex: { amount: 'amount', on: 'on', enabled: 'on', qty: 'qty', quantity: 'qty', unit: 'unit', unitprice: 'unit', price: 'unit' },
   fixed: { amount: 'amount' }
 };
 const normKey = k => String(k || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -1265,10 +1288,11 @@ function csvToState(rows, base) {
     if (sec === 'capex' || sec === 'fixed') {
       if (!r.name) { warn.push(`Γραμμή ${line}: λείπει όνομα`); return; }
       const it = sec === 'capex'
-        ? getItem(sec, (r.category || 'Λοιπά') + '|' + r.name, () => ({ cat: r.category || 'Λοιπά', name: r.name, amount: 0, on: true, note: '' }))
+        ? getItem(sec, (r.category || 'Λοιπά') + '|' + r.name, () => ({ cat: r.category || 'Λοιπά', name: r.name, amount: 0, qty: 1, unit: null, on: true, note: '' }))
         : getItem(sec, r.name, () => ({ name: r.name, amount: 0, note: '' }));
       const key = FIELD_MAP[sec][f || 'amount'];
       if (key === 'on') it.on = csvBool(r.value);
+      else if (key === 'qty' || key === 'unit') { const v = csvNum(r.value); if (v == null) warn.push(`Γραμμή ${line}: μη έγκυρος αριθμός «${r.value}»`); else it[key] = v; }
       else if (key === 'amount') { const v = csvNum(r.value); if (v == null) warn.push(`Γραμμή ${line}: μη έγκυρο ποσό «${r.value}»`); else it.amount = v; }
       else warn.push(`Γραμμή ${line}: άγνωστο πεδίο «${r.field}»`);
       if (r.note) it.note = r.note;
@@ -1299,7 +1323,7 @@ function csvToState(rows, base) {
 function stateToCsv(st) {
   const out = [CSV_COLS];
   const add = (...r) => out.push(r);
-  st.capex.forEach(x => { add('capex', x.cat, x.name, 'amount', x.amount, x.note || ''); if (!x.on) add('capex', x.cat, x.name, 'on', 0, ''); });
+  st.capex.forEach(x => { add('capex', x.cat, x.name, 'qty', x.qty ?? 1, ''); add('capex', x.cat, x.name, 'unit', x.unit ?? x.amount, x.note || ''); if (!x.on) add('capex', x.cat, x.name, 'on', 0, ''); });
   st.fixed.forEach(x => add('fixed', '', x.name, 'amount', x.amount, x.note || ''));
   st.services.forEach(x => { add('service', '', x.name, 'price', x.price, ''); add('service', '', x.name, 'mix', x.mix, ''); });
   st.barbers.forEach(b => ['mode', 'cutsPerDay', 'salary', 'bonusPct', 'rent', 'barberPct', 'ticket'].forEach(k => add('barber', '', b.name, k, b[k], '')));
@@ -1443,7 +1467,7 @@ async function push() {
 const SEC_LABEL = { barbers: 'Κουρέας', services: 'Υπηρεσία', capex: 'Έξοδο έναρξης', fixed: 'Πάγιο', partners: 'Εταίρος', settings: 'Παραδοχές', barista: 'Μπαρίστα/καφές', retail: 'Λιανική', finance: 'Χρηματοδότηση' };
 const F_LABEL = {
   cutsPerDay: 'κουρέματα/ημέρα', salary: 'μισθός', bonusPct: 'bonus %', rent: 'ενοίκιο θέσης', barberPct: 'ποσοστό κουρέα', turnPct: '% επί τζίρου', turnBase: 'τζίρος από', ticket: 'μέση τιμή', mode: 'μοντέλο',
-  name: 'όνομα', amount: 'ποσό', on: 'ενεργό', price: 'τιμή', mix: '% πελατών', capPct: '% κεφαλαίου', share: '% κερδών', role: 'ρόλος', note: 'σημείωση', cat: 'κατηγορία',
+  name: 'όνομα', amount: 'ποσό', qty: 'τεμάχια', unit: 'τιμή τεμαχίου', on: 'ενεργό', price: 'τιμή', mix: '% πελατών', capPct: '% κεφαλαίου', share: '% κερδών', role: 'ρόλος', note: 'σημείωση', cat: 'κατηγορία',
   enabled: 'μπαρίστα', fte: 'απασχόληση %', coffeeMode: 'καφές', cupsPerDay: 'καφέδες/ημέρα', takeRate: '% που παίρνουν καφέ', freeAll: 'δωρεάν καφές σε όλους τους πελάτες', costPerCup: 'κόστος/καφέ', sales: 'πωλήσεις', margin: 'περιθώριο %',
   loan: 'δάνειο', rate: 'επιτόκιο', years: 'διάρκεια (έτη)', grant: 'επιδότηση', grantMonth: 'μήνας επιδότησης',
   daysPerMonth: 'ημέρες/μήνα', vatServices: 'ΦΠΑ κουρέματος', vatCoffee: 'ΦΠΑ καφέ', vatProducts: 'ΦΠΑ προϊόντων', employerRate: 'εργοδοτικές εισφορές', salaryMonths: 'μισθοί/έτος',
@@ -1623,6 +1647,8 @@ document.addEventListener('input', e => {
   else if (t === 'n') { v = parseFloat(String(el.value).replace(',', '.')); if (!isFinite(v)) v = 0; }
   else v = el.value;
   setPath(S, el.dataset.k, v);
+  const cm = el.dataset.k.match(/^capex\.(\d+)\.(qty|unit)$/);
+  if (cm) { const x = S.capex[+cm[1]]; x.amount = Math.round((+x.qty || 0) * (+x.unit || 0) * 100) / 100; const t = $(`cxa-${cm[1]}`); if (t) t.textContent = eur(x.amount); }
   save();
   document.querySelectorAll(`[data-k="${el.dataset.k}"]`).forEach(o => { if (o !== el) { if (o.type === 'checkbox') o.checked = v; else o.value = v; } });
   if (el.hasAttribute('data-rr')) renderView(); else refreshSoon();
@@ -1652,7 +1678,7 @@ const ACTIONS = {
   delBarber: d => { if (confirm(`Αφαίρεση «${S.barbers[d.i].name}»;`)) S.barbers.splice(+d.i, 1); },
   addService: () => { S.services.push({ name: 'Νέα υπηρεσία', price: 10, mix: 0 }); },
   delService: d => { S.services.splice(+d.i, 1); },
-  addCapex: d => { S.capex.push({ cat: d.cat, name: 'Νέο έξοδο', amount: 0, on: true, note: '' }); },
+  addCapex: d => { S.capex.push({ cat: d.cat, name: 'Νέο έξοδο', qty: 1, unit: 0, amount: 0, on: true, note: '' }); },
   delCapex: d => { S.capex.splice(+d.i, 1); },
   addFixed: () => { S.fixed.push({ name: 'Νέο έξοδο', amount: 0, note: '' }); },
   delFixed: d => { S.fixed.splice(+d.i, 1); },
