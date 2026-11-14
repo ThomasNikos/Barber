@@ -51,6 +51,8 @@ writeFileSync(secretsPath, JSON.stringify(sec, null, 2), { mode: 0o600 });
 
 // 1. encrypt the app with a random content key
 let html = readFileSync(new URL('src/app.html', root), 'utf8');
+const BUILD = new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 14);
+html = html.replace('__BARBER_BUILD__', BUILD);
 if (!html.includes('__BARBER_DATA_KEY__')) throw new Error('placeholder __BARBER_DATA_KEY__ missing in src/app.html');
 html = html.replace('__BARBER_DATA_KEY__', sec.dataKey);
 const cekRaw = crypto.getRandomValues(new Uint8Array(32));
@@ -130,13 +132,14 @@ async function unlock(pw){
 }
 function show(r){window.__barber={user:r.user,token:r.token};document.open();document.write(r.html);document.close();}
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
-const saved=ls.get('barber.pw');
+const ss={get:k=>{try{return sessionStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{sessionStorage.setItem(k,v)}catch(e){}}};
+const saved=ls.get('barber.pw')||ss.get('barber.pw');
 if(saved){unlock(saved).then(show).catch(()=>ls.del('barber.pw'));}
 document.getElementById('f').addEventListener('submit',async e=>{
   e.preventDefault();
   const b=document.getElementById('go'),err=document.getElementById('err'),pw=document.getElementById('pw').value;
   b.disabled=true;b.textContent='Ξεκλείδωμα…';err.textContent='';
-  try{const r=await unlock(pw);if(document.getElementById('rm').checked)ls.set('barber.pw',pw);show(r);}
+  try{const r=await unlock(pw);ss.set('barber.pw',pw);if(document.getElementById('rm').checked)ls.set('barber.pw',pw);show(r);}
   catch(x){err.textContent='Λάθος κωδικός';b.disabled=false;b.textContent='Είσοδος';}
 });
 })();
@@ -148,6 +151,7 @@ document.getElementById('f').addEventListener('submit',async e=>{
 mkdirSync(new URL('docs/', root), { recursive: true });
 writeFileSync(new URL('docs/index.html', root), page);
 writeFileSync(new URL('docs/.nojekyll', root), '');
+writeFileSync(new URL('docs/version.txt', root), BUILD);
 
 const sha = t => createHash('sha256').update(t, 'utf8').digest('hex');
 const sql = sec.users.map(u => `('${u.name.replace(/'/g, "''")}', '${sha(u.token)}')`).join(',\n  ');

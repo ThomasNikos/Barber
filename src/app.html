@@ -248,6 +248,8 @@ body.play header.top::before{content:"";display:block;height:4px;background:var(
 .ot{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
 .ot summary{cursor:pointer;font-size:13.5px;font-weight:600;color:var(--muted)}
 .ot[open] summary{color:var(--ink)}
+#refreshBtn.spin svg{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 @media print{header.top nav,.hbtns,.x,.btn{display:none!important} header.top{position:static}}
 </style>
 </head>
@@ -260,6 +262,7 @@ body.play header.top::before{content:"";display:block;height:4px;background:var(
         <button class="ghost viewbtn" data-act="play" id="playBtn"></button>
         <button class="ghost viewbtn" data-act="view" id="viewBtn"></button>
         <button class="ghost" data-act="lock" id="lockBtn" title="Κλείδωμα αλλαγών"></button>
+        <button class="ghost" data-act="refresh" id="refreshBtn" title="Ανανέωση: φέρνει τα τελευταία νούμερα και τη νέα έκδοση"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="margin:0;width:14px;height:14px;vertical-align:-2px"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3"/></svg></button>
         <button class="ghost" data-act="theme" title="Φωτεινό / σκοτεινό θέμα"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="margin:0"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5v11A5.5 5.5 0 0 0 8 2.5z" fill="currentColor"/></svg></button>
         <button class="ghost" data-act="logout" title="Έξοδος" id="logoutBtn"><span class="lbl">Έξοδος</span><svg class="ico2" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2.5H3.5v11H6M10 5l3 3-3 3M13 8H6.5"/></svg></button>
       </div>
@@ -1805,6 +1808,26 @@ async function restoreVersion(id, at) {
 function renderTabs() {
   $('tabs').innerHTML = Object.entries(TABS).map(([k, t]) => `<button class="${k === TAB ? 'on' : ''}" data-act="tab" data-tab="${k}">${t.label}</button>`).join('');
 }
+const BUILD = '__BARBER_BUILD__';
+async function doRefresh() {
+  const btn = $('refreshBtn'); btn.classList.add('spin');
+  try {
+    let newer = false;
+    if (/^\d{14}$/.test(BUILD)) {
+      const v = (await (await fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })).text()).trim();
+      newer = /^\d{14}$/.test(v) && v !== BUILD;
+    }
+    if (newer) {
+      toast('Νέα έκδοση — φόρτωση…');
+      await fetch(location.pathname, { cache: 'reload' }).catch(() => {});
+      setTimeout(() => location.reload(), 300);
+      return;
+    }
+    if (sync.on) { sync.version = null; await pull({ force: true }); toast(sync.state === 'err' ? 'Χωρίς σύνδεση' : 'Ενημερώθηκε'); }
+    else { renderView(); toast('Ενημερώθηκε'); }
+  } catch (e) { console.error(e); toast('Η ανανέωση απέτυχε'); }
+  finally { btn.classList.remove('spin'); }
+}
 const LOCK_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>';
 const PLAY_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1.5" y="4" width="13" height="8" rx="4"/><path d="M4.5 8h3M6 6.5v3"/><circle cx="10.5" cy="7" r=".7" fill="currentColor"/><circle cx="11.8" cy="9" r=".7" fill="currentColor"/></svg>';
 const TARGET_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="3"/><circle cx="8" cy="8" r=".8" fill="currentColor"/></svg>';
@@ -1959,7 +1982,8 @@ const ACTIONS = {
     const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     const nx = cur === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = nx; ls.set(LS_THEME, nx); return false;
   },
-  logout: () => { ls.del('barber.pw'); location.reload(); return false; }
+  logout: () => { ls.del('barber.pw'); try { sessionStorage.removeItem('barber.pw'); } catch (e) {} location.reload(); return false; },
+  refresh: () => { doRefresh(); return false; }
 };
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
