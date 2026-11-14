@@ -270,7 +270,7 @@ const DEFAULTS = {
     { name: 'Κουρέας 4', mode: 'salary', cutsPerDay: 9, ticket: 0, salary: 1100, bonusPct: 0, rent: 400, barberPct: 50 },
     { name: 'Κουρέας 5', mode: 'rent', cutsPerDay: 8, ticket: 0, salary: 1100, bonusPct: 0, rent: 400, barberPct: 50 }
   ],
-  barista: { enabled: true, salary: 920, fte: 100, coffeeMode: 'free', price: 2.0, cupsPerDay: 40, takeRate: 60, costPerCup: 0.45 },
+  barista: { enabled: true, salary: 920, fte: 100, coffeeMode: 'both', price: 2.0, cupsPerDay: 20, takeRate: 60, costPerCup: 0.45 },
   retail: { sales: 400, margin: 40 },
   fixed: [
     { name: 'Ενοίκιο (75 τ.μ.)', amount: 550, note: 'Εύρος 500–600 €' },
@@ -432,18 +432,18 @@ function compute(s, opt = {}) {
 
   // μπαρίστα & καφές
   const ba = s.barista;
-  let cups = 0;
+  let cups = 0, freeCups = 0, paidCups = 0, coffeeGross = 0;
   if (ba.enabled) { cost.barista = (+ba.salary || 0) * gW * sm * er * (+ba.fte || 0) / 100; payrollBase += cost.barista; }
-  if (ba.coffeeMode === 'free') {
-    cups = clients * (+ba.takeRate || 0) / 100;
-    cost.coffee = cups * (+ba.costPerCup || 0) * gC;
-  } else if (ba.coffeeMode === 'paid') {
-    cups = (+ba.cupsPerDay || 0) * k * st.daysPerMonth;
-    const g = cups * (+ba.price || 0) * gP;
-    rev.coffee = g / vC;
-    cost.coffee = cups * (+ba.costPerCup || 0) * gC;
-    cost.card += card(g);
+  // free = κερασμένος στους πελάτες, paid = πωλείται, both = πωλείται + κερασμένος στους πελάτες του κουρείου
+  if (ba.coffeeMode === 'free' || ba.coffeeMode === 'both') freeCups = clients * (+ba.takeRate || 0) / 100;
+  if (ba.coffeeMode === 'paid' || ba.coffeeMode === 'both') {
+    paidCups = (+ba.cupsPerDay || 0) * k * st.daysPerMonth;
+    coffeeGross = paidCups * (+ba.price || 0) * gP;
+    rev.coffee = coffeeGross / vC;
+    cost.card += card(coffeeGross);
   }
+  cups = freeCups + paidCups;
+  cost.coffee = cups * (+ba.costPerCup || 0) * gC;
 
   // λιανική
   const rg = (+s.retail.sales || 0) * k * gP;
@@ -459,8 +459,8 @@ function compute(s, opt = {}) {
   const tax = Math.max(0, preTax) * st.corpTax / 100;
   const net = preTax - tax;
   const dist = net > 0 ? net * (1 - st.dividendTax / 100) : net;
-  const grossReceipts = shopGross + (ba.coffeeMode === 'paid' ? cups * (+ba.price || 0) * gP : 0) + rg;
-  return { barbers, rev, cost, revenue, costs, preTax, tax, net, dist, clients, shopCuts, shopGross, shopNet, cups, payrollBase, grossReceipts, avgTicket: at };
+  const grossReceipts = shopGross + coffeeGross + rg;
+  return { barbers, rev, cost, revenue, costs, preTax, tax, net, dist, clients, shopCuts, shopGross, shopNet, cups, freeCups, paidCups, payrollBase, grossReceipts, avgTicket: at };
 }
 
 function capexTotals(s, R) {
@@ -937,7 +937,7 @@ function rCoffee() {
   const b = S.barista;
   return `
   <h2>Μπαρίστα, καφές & προϊόντα</h2>
-  <p class="lead">Ο καφές μπορεί να είναι κερασμένος (μέρος της εμπειρίας) ή να πουλιέται. Η πώληση καφέ θέλει επιπλέον γνωστοποίηση ως κατάστημα υγειονομικού ενδιαφέροντος· ο κερασμένος είναι απλούστερος.</p>
+  <p class="lead">Ο καφές μπορεί να πουλιέται, να κερνιέται στους πελάτες του κουρείου, ή και τα δύο. Η πώληση καφέ θέλει επιπλέον γνωστοποίηση ως κατάστημα υγειονομικού ενδιαφέροντος· ο κερασμένος είναι απλούστερος.</p>
   <div class="grid g2">
     <div class="card">
       <h3>Μπαρίστα</h3>
@@ -947,10 +947,10 @@ function rCoffee() {
     </div>
     <div class="card">
       <h3>Καφές</h3>
-      ${select('barista.coffeeMode', [['free', 'Κερασμένος στους πελάτες'], ['paid', 'Πωλείται'], ['none', 'Χωρίς καφέ']])}
+      ${select('barista.coffeeMode', [['both', 'Πωλείται + κερασμένος στους πελάτες'], ['free', 'Μόνο κερασμένος στους πελάτες'], ['paid', 'Μόνο πωλείται'], ['none', 'Χωρίς καφέ']])}
       <div class="fields" style="margin-top:10px">
-        ${b.coffeeMode === 'free' ? field('barista.takeRate', 'Πελάτες που παίρνουν καφέ', { suf: '%', step: 5 }) : ''}
-        ${b.coffeeMode === 'paid' ? field('barista.price', 'Τιμή (με ΦΠΑ)', { suf: '€', step: 0.1 }) + field('barista.cupsPerDay', 'Καφέδες / ημέρα', { suf: 'τεμ.', step: 1 }) : ''}
+        ${b.coffeeMode === 'free' || b.coffeeMode === 'both' ? field('barista.takeRate', 'Πελάτες κουρείου που παίρνουν δωρεάν καφέ', { suf: '%', step: 5 }) : ''}
+        ${b.coffeeMode === 'paid' || b.coffeeMode === 'both' ? field('barista.price', 'Τιμή πώλησης (με ΦΠΑ)', { suf: '€', step: 0.1 }) + field('barista.cupsPerDay', 'Καφέδες που πωλούνται / ημέρα', { suf: 'τεμ.', step: 1, help: b.coffeeMode === 'both' ? 'Εκτός από τους κερασμένους' : '' }) : ''}
         ${b.coffeeMode !== 'none' ? field('barista.costPerCup', 'Κόστος ανά καφέ', { suf: '€', step: 0.05, help: 'Καφές, γάλα, ποτήρι, ζάχαρη' }) : ''}
       </div>
       <div id="cf-coffee"></div>
@@ -966,7 +966,11 @@ function fCoffee(R) {
   const b = S.barista;
   setHTML('cf-barista', b.enabled ? `<div class="note">Κόστος για το μαγαζί: <b>${eur(R.cost.barista)}/μήνα</b> (μισθός × ${S.settings.salaryMonths}/12 + εισφορές ${num1(S.settings.employerRate)}%).</div>` : '');
   let h = '';
-  if (b.coffeeMode === 'free') h = `${row('Καφέδες/μήνα', num(R.cups))}${row('Κόστος πρώτης ύλης', '−' + eur(R.cost.coffee))}${row('Καφές + μπαρίστα συνολικά', '−' + eur(R.cost.coffee + R.cost.barista), 'tot')}${row('Ανά πελάτη', eur2((R.cost.coffee + R.cost.barista) / (R.clients || 1)))}`;
+  if (b.coffeeMode === 'both') {
+    const p = R.rev.coffee - R.cost.coffee - R.cost.barista, unit = b.price / (1 + S.settings.vatCoffee / 100) - b.costPerCup;
+    h = `${row('Κερασμένοι καφέδες/μήνα', num(R.freeCups))}${row('Καφέδες που πωλούνται/μήνα', num(R.paidCups))}${row('Έσοδα πωλήσεων (χωρίς ΦΠΑ)', eur(R.rev.coffee))}${row('Πρώτη ύλη (όλοι οι καφέδες)', '−' + eur(R.cost.coffee))}${row('Μπαρίστα', '−' + eur(R.cost.barista))}${row('Αποτέλεσμα καφέ', `<span class="${sgn(p)}">${eur(p)}</span>`, 'tot')}` +
+      (unit > 0 ? row('Πωλήσεις/ημέρα για να καλυφθεί καφές + μπαρίστα', num((R.cost.barista + R.freeCups * b.costPerCup) / unit / S.settings.daysPerMonth)) : '');
+  } else if (b.coffeeMode === 'free') h = `${row('Καφέδες/μήνα', num(R.cups))}${row('Κόστος πρώτης ύλης', '−' + eur(R.cost.coffee))}${row('Καφές + μπαρίστα συνολικά', '−' + eur(R.cost.coffee + R.cost.barista), 'tot')}${row('Ανά πελάτη', eur2((R.cost.coffee + R.cost.barista) / (R.clients || 1)))}`;
   else if (b.coffeeMode === 'paid') { const p = R.rev.coffee - R.cost.coffee - R.cost.barista; h = `${row('Καφέδες/μήνα', num(R.cups))}${row('Έσοδα (χωρίς ΦΠΑ)', eur(R.rev.coffee))}${row('Πρώτη ύλη', '−' + eur(R.cost.coffee))}${row('Μπαρίστα', '−' + eur(R.cost.barista))}${row('Αποτέλεσμα καφέ', `<span class="${sgn(p)}">${eur(p)}</span>`, 'tot')}${row('Καφέδες/ημέρα για να καλυφθεί ο μπαρίστα', num(R.cost.barista / Math.max(0.01, (b.price / (1 + S.settings.vatCoffee / 100) - b.costPerCup)) / S.settings.daysPerMonth))}`; }
   setHTML('cf-coffee', h ? `<div style="margin-top:10px">${h}</div>` : '');
   setHTML('cf-retail', `<div style="margin-top:10px">${row('Έσοδα χωρίς ΦΠΑ', eur(R.rev.retail))}${row('Κόστος προϊόντων', '−' + eur(R.cost.retail))}${row('Μικτό κέρδος', eur(R.rev.retail - R.cost.retail), 'tot')}</div>`);
@@ -1157,7 +1161,7 @@ function scenarios() { try { return JSON.parse(ls.get(LS_SCN)) || {}; } catch (e
 const CSV_COLS = ['section', 'category', 'name', 'field', 'value', 'note'];
 const LIST_SECTIONS = { capex: 'Έξοδα έναρξης', fixed: 'Μηνιαία πάγια', service: 'Υπηρεσίες', barber: 'Κουρείς', partner: 'Εταίροι' };
 const MODE_ALIASES = { salary: 'salary', 'μισθωτός': 'salary', 'μισθωτος': 'salary', 'μισθός': 'salary', commission: 'commission', 'ποσοστό': 'commission', 'ποσοστο': 'commission', rent: 'rent', 'ενοικίαση': 'rent', 'ενοικιαση': 'rent', 'ενοικίαση θέσης': 'rent', partner: 'partner', 'εταίρος': 'partner', 'εταιρος': 'partner' };
-const COFFEE_ALIASES = { free: 'free', 'κερασμένος': 'free', paid: 'paid', 'πωλείται': 'paid', none: 'none', 'χωρίς': 'none' };
+const COFFEE_ALIASES = { free: 'free', 'κερασμένος': 'free', paid: 'paid', 'πωλείται': 'paid', both: 'both', mixed: 'both', 'και τα δύο': 'both', 'μικτό': 'both', none: 'none', 'χωρίς': 'none' };
 const FIELD_MAP = {
   barber: { mode: 'mode', cutsperday: 'cutsPerDay', cuts: 'cutsPerDay', salary: 'salary', bonuspct: 'bonusPct', bonus: 'bonusPct', rent: 'rent', barberpct: 'barberPct', commissionpct: 'barberPct', commission: 'barberPct', ticket: 'ticket' },
   partner: { cappct: 'capPct', capital: 'capPct', share: 'share', profitpct: 'share', sharepct: 'share', role: 'role' },
@@ -1406,7 +1410,7 @@ const F_LABEL = {
 function fmtV(k, v) {
   if (typeof v === 'boolean') return v ? 'ναι' : 'όχι';
   if (k === 'mode') return (MODES[v] || {}).label || v;
-  if (k === 'coffeeMode') return { free: 'κερασμένος', paid: 'πωλείται', none: 'χωρίς' }[v] || v;
+  if (k === 'coffeeMode') return { free: 'κερασμένος', paid: 'πωλείται', both: 'πωλείται + κερασμένος', none: 'χωρίς' }[v] || v;
   if (typeof v === 'number') return num1(v);
   return `«${v ?? ''}»`;
 }
@@ -1445,6 +1449,7 @@ function rHistory() {
   <div id="hist">${sync.on ? '<p class="small">Φόρτωση…</p>' : '<p class="small">Το ιστορικό είναι διαθέσιμο μόνο στη δημοσιευμένη σελίδα με κωδικό.</p>'}</div>`;
 }
 let histSeq = 0;
+const hhmm = x => x ? new Date(x).toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' }) : '';
 async function loadHistory() {
   if (!sync.on || !$('hist')) return;
   const my = ++histSeq;
@@ -1459,11 +1464,33 @@ async function loadHistory() {
       items.push({ r, ch });
     }
     if (my !== histSeq || !$('hist')) return;
+    // ενώνει συνεχόμενες αλλαγές του ίδιου ατόμου μέσα σε 5 λεπτά (π.χ. ενδιάμεσα πληκτρολόγησης)
+    const merged = [];
+    for (const it of items) {
+      const last = merged[merged.length - 1];
+      if (last && it.r.kind === 'change' && last.r.kind === 'change' && last.r.user_name === it.r.user_name &&
+          new Date(last.first).getTime() - new Date(it.r.at).getTime() <= 5 * 60000) {
+        last.parts.unshift(it.ch); last.first = it.r.at;
+      } else merged.push({ r: it.r, ch: it.ch, parts: [it.ch], first: it.r.at });
+    }
+    merged.forEach(g => {
+      if (g.parts.length < 2) return;
+      const order = [], map = new Map();
+      g.parts.flat().forEach(line => {
+        const m = line.match(/^(.*) (\S+) → (.*)$/);
+        if (!m) { order.push({ raw: line }); return; }
+        const cur = map.get(m[1]);
+        if (cur) cur.to = m[3]; else { const o = { key: m[1], from: m[2], to: m[3] }; map.set(m[1], o); order.push(o); }
+      });
+      g.ch = order.filter(o => o.raw || o.from !== o.to).map(o => o.raw || `${o.key} ${o.from} → ${o.to}`);
+      if (!g.ch.length) g.ch = ['(καμία καθαρή αλλαγή)'];
+    });
+    items.length = 0; items.push(...merged);
     const byDay = {};
     items.forEach(it => { const d = new Date(it.r.at).toLocaleDateString('el-GR', { weekday: 'long', day: 'numeric', month: 'long' }); (byDay[d] = byDay[d] || []).push(it); });
-    $('hist').innerHTML = items.length ? Object.entries(byDay).map(([d, list]) => `<div class="card" style="margin-bottom:12px"><h3 style="text-transform:capitalize">${esc(d)}</h3>${list.map(({ r, ch }) => `
+    $('hist').innerHTML = items.length ? Object.entries(byDay).map(([d, list]) => `<div class="card" style="margin-bottom:12px"><h3 style="text-transform:capitalize">${esc(d)}</h3>${list.map(({ r, ch, first }) => `
       <div class="hrow ${r.kind}">
-        <div class="hmeta"><b>${esc(r.user_name)}</b><span class="small">${new Date(r.at).toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' })}</span></div>
+        <div class="hmeta"><b>${esc(r.user_name)}</b><span class="small">${hhmm(first) !== hhmm(r.at) ? `${hhmm(first)}–${hhmm(r.at)}` : hhmm(r.at)}</span></div>
         ${r.kind === 'login' ? '<div class="small">συνδέθηκε</div>' : `<ul class="hch">${ch.slice(0, 12).map(c => `<li>${esc(c)}</li>`).join('')}${ch.length > 12 ? `<li class="small">και ${ch.length - 12} ακόμα</li>` : ''}</ul>
         ${r.has_snapshot ? `<button class="btn sec2 hbtn" data-act="restore" data-id="${r.id}" data-at="${esc(r.at)}">Επαναφορά σε αυτή την έκδοση</button>` : ''}`}
       </div>`).join('')}</div>`).join('') : '<p class="small">Κανένα συμβάν ακόμα.</p>';
