@@ -450,7 +450,7 @@ function compute(s, opt = {}) {
         r.staff = (base + bonus) * er;
         payrollBase += base * er;
         r.barberEarn = base + bonus;
-        r.barberNote = 'μικτά/μήνα (με δώρα & επίδομα)';
+        r.barberNote = `${num(+b.salary || 0)} € μικτά × ${num1(st.salaryMonths)} μισθοί (μαζί με δώρα & επίδομα αδείας) ÷ 12 = μέσος όρος μήνα${bonus > 0 ? ' + bonus' : ''}. Κόστος για το μαγαζί με εισφορές: ${eur(r.staff)}`;
       } else if (mode === 'commission') {
         r.staff = net * (+b.barberPct || 0) / 100;
         r.barberEarn = r.staff;
