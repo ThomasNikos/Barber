@@ -609,8 +609,13 @@ function capexTotals(s, R) {
   s.capex.forEach(x => { cats[x.cat] = cats[x.cat] || 0; if (x.on) { cats[x.cat] += +x.amount || 0; items += +x.amount || 0; } });
   const contingency = items * s.settings.contingencyPct / 100;
   const reserve = s.settings.reserveMonths * (R.cost.fixed + R.payrollBase);
-  return { cats, items, contingency, reserve, spend: items + contingency, total: items + contingency + reserve };
+  const F = s.finance || {}, loan = Math.max(0, +F.loan || 0), grant = (F.grantOn && +F.grant > 0) ? +F.grant : 0;
+  const total = items + contingency + reserve;
+  // net = ό,τι βάζουν οι εταίροι: σύνολο μείον δάνειο μείον επιδότηση
+  return { cats, items, contingency, reserve, spend: items + contingency, total, loan, grant, net: Math.max(0, total - loan - grant) };
 }
+const capTip = C => tipHTML('Κεφάλαιο εταίρων', [['', 'Έξοδα έναρξης + απρόβλεπτα', eur(C.spend)], ['', 'Αποθεματικό κίνησης', eur(C.reserve)], ['', 'Σύνολο που χρειάζεται', eur(C.total)],
+  ...(C.loan ? [['', '− Δάνειο', eur(C.loan)]] : []), ...(C.grant ? [['', '− Επιδότηση', eur(C.grant)]] : []), ['', 'Βάζουν οι εταίροι', eur(C.net)]]);
 
 function rampK(s, m) {
   const st = s.settings, r = Math.max(0, st.rampMonths | 0), a = st.rampStart / 100;
@@ -626,7 +631,7 @@ function loanPlan(F) {
 /* Μήνας-μήνας: σταδιακή πελατεία, ετήσιες αυξήσεις, τόκοι (εκπίπτουν) και δόσεις δανείου, επιδότηση. */
 function cashflow(s, C) {
   const st = s.settings, H = Math.max(12, st.horizon | 0), F = s.finance || {}, lp = loanPlan(F);
-  const cum = [], monthly = [], years = [];
+  const cum = [], monthly = [], years = [], grants = [];
   const start = -Math.max(0, C.spend - lp.L);
   let c = start, bal = lp.L, payback = null, min = c;
   for (let m = 1; m <= H; m++) {
@@ -644,7 +649,7 @@ function cashflow(s, C) {
     const gN = Math.max(1, Math.round((+F.grantRepayYears || 0) * 12)), gStart = gm + Math.max(0, +F.grantGrace || 0) + 1;
     const grantRepay = (gOn && F.grantNonRepay === false && m >= gStart && m < gStart + gN) ? +F.grant / gN : 0;
     const cash = net - principal + grant - grantRepay;
-    c += cash; cum.push(c); monthly.push(cash);
+    c += cash; cum.push(c); monthly.push(cash); grants.push(grant);
     if (c < min) min = c;
     if (payback === null && c >= 0 && start < 0) payback = m;
     const Y = years[y] = years[y] || { rev: 0, gross: 0, costs: 0, preTax: 0, tax: 0, net: 0, loan: 0, grant: 0, grantRepay: 0, cash: 0, clients: 0 };
@@ -652,7 +657,7 @@ function cashflow(s, C) {
     Y.rev += R.revenue; Y.gross += R.grossReceipts; Y.costs += R.costs + interest; Y.preTax += preTax; Y.tax += tax; Y.net += net;
     Y.loan += interest + principal; Y.grant += grant; Y.cash += cash; Y.clients += R.clients; Y.end = c;
   }
-  return { start, cum, monthly, years, payback, min, loan: lp, H };
+  return { start, cum, monthly, grants, years, payback, min, loan: lp, H };
 }
 
 function breakeven(s) {
@@ -938,12 +943,12 @@ function rOverview() {
 function fOverview(R) {
   const C = capexTotals(S, R), CF = cashflow(S, C), BE = breakeven(S);
   const st = S.settings, lp = CF.loan;
-  const own = Math.max(0, C.total - lp.L);
+  const own = C.net;
   setHTML('ov-kpis', [
     ['Τζίρος/μήνα (με ΦΠΑ)', eur(R.grossReceipts + R.rev.chairRent * (1 + st.vatServices / 100)), `${num(R.clients)} πελάτες`],
     ['Κέρδος προ φόρων', `<span class="${sgn(R.preTax)}">${eur(R.preTax)}</span>`, `${eur(R.preTax * 12)} / έτος`],
     ['Καθαρό μετά φόρων', `<span class="${sgn(R.net)}">${eur(R.net)}</span>`, `${eur(R.net * 12)} / έτος`],
-    ['Απαιτούμενο κεφάλαιο', eur(C.total), lp.L ? `εταίροι ${eur(own)} · δάνειο ${eur(lp.L)}` : `έξοδα ${eur(C.spend)} + αποθεματικό ${eur(C.reserve)}`],
+    ['Κεφάλαιο εταίρων', eur(C.net), (C.loan || C.grant) ? `σύνολο ${eur(C.total)}${C.loan ? ` − δάνειο ${eur(C.loan)}` : ''}${C.grant ? ` − επιδότηση ${eur(C.grant)}` : ''}` : `έξοδα ${eur(C.spend)} + αποθεματικό ${eur(C.reserve)}`],
     ['Απόσβεση', CF.payback ? `${CF.payback} μήνες` : `> ${CF.H} μήνες`, CF.payback ? `με σταδιακή εκκίνηση ${st.rampMonths} μηνών` : 'δεν αποσβένεται στο διάστημα'],
     ['Νεκρό σημείο', BE.cpd != null ? `${num1(BE.cpd)} κουρ./ημέρα` : '—', BE.cpd != null ? `ανά κουρέα (σήμερα ${num1(BE.avg)})` : 'δεν υπάρχουν μισθωτοί/ποσοστό']
   ].map(([l, v, e]) => `<div class="card kpi"><span>${l}</span><b>${v}</b><em>${e}</em></div>`).join(''));
@@ -1428,12 +1433,14 @@ function rCapex() {
 function fCapex(R) {
   const C = capexTotals(S, R), lp = loanPlan(S.finance);
   Object.values(C.cats).forEach((v, ci) => setHTML(`cx-cat-${ci}`, `<b>${eur(v)}</b>`));
-  setHTML('cx-kpis', [['Έξοδα έναρξης', eur(C.items)], ['+ Απρόβλεπτα', eur(C.contingency)], ['+ Αποθεματικό', eur(C.reserve)], ['Απαιτούμενο κεφάλαιο', `<span style="color:var(--accent)">${eur(C.total)}</span>`]]
+  setHTML('cx-kpis', [['Έξοδα έναρξης', eur(C.items)], ['+ Απρόβλεπτα', eur(C.contingency)], ['+ Αποθεματικό', eur(C.reserve)], ...(C.loan ? [['− Δάνειο', eur(C.loan)]] : []), ...(C.grant ? [['− Επιδότηση', eur(C.grant)]] : []), ['Κεφάλαιο εταίρων', `<span style="color:var(--accent)">${eur(C.net)}</span>`]]
     .map(([l, v]) => `<div class="card kpi"><span>${l}</span><b>${v}</b></div>`).join(''));
   setHTML('cx-tot', Object.entries(C.cats).map(([k, v]) => row(esc(k), eur(v))).join('') +
     row('Σύνολο εξόδων', eur(C.items), 'sub') + row(`Απρόβλεπτα ${S.settings.contingencyPct}%`, eur(C.contingency)) +
-    row(`Αποθεματικό ${num1(S.settings.reserveMonths)} μηνών`, eur(C.reserve)) + row('Απαιτούμενο κεφάλαιο', eur(C.total), 'tot') +
-    (lp.L ? row('− Δάνειο', eur(lp.L)) + row('Βάζουν οι εταίροι', eur(Math.max(0, C.total - lp.L)), 'sub') : ''));
+    row(`Αποθεματικό ${num1(S.settings.reserveMonths)} μηνών`, eur(C.reserve)) + row('Σύνολο που χρειάζεται', eur(C.total), 'sub') +
+    (C.loan ? row('− Δάνειο', eur(C.loan)) : '') + (C.grant ? row(`− Επιδότηση${S.finance.grantNonRepay === false ? ' (επιστρεπτέα)' : ''}`, eur(C.grant)) : '') +
+    row('Βάζουν οι εταίροι', eur(C.net), 'tot') +
+    (C.grant && (+S.finance.grantMonth || 1) > 1 ? `<p class="small">Η επιδότηση μπαίνει τον ${num(S.finance.grantMonth)}ο μήνα· μέχρι τότε χρειάζεται προσωρινά ${eur(C.total - C.loan)} (γέφυρα).</p>` : ''));
   const cats = Object.entries(C.cats).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
   const top = cats.slice(0, 7).map(([k, v], i) => ({ name: k, value: v, color: SER[i] }));
   const rest = cats.slice(7).reduce((a, [, v]) => a + v, 0);
@@ -1498,8 +1505,9 @@ function fPartners(R) {
   const C = capexTotals(S, R), CF = cashflow(S, C);
   const cs = S.partners.reduce((a, p) => a + (+p.capPct || 0), 0), ss = S.partners.reduce((a, p) => a + (+p.share || 0), 0);
   setHTML('pt-warn', (Math.round(cs) !== 100 || Math.round(ss) !== 100) ? `<div class="note warn">Τα ποσοστά πρέπει να αθροίζουν 100%. Κεφάλαιο: ${num1(cs)}%, κέρδη: ${num1(ss)}%.</div>` : '');
-  const dv = 1 - S.settings.dividendTax / 100, own = Math.max(0, C.total - CF.loan.L);
-  const dist = CF.monthly.map(v => v > 0 ? v * dv : v);
+  const dv = 1 - S.settings.dividendTax / 100, own = C.net;
+  // η επιδότηση έχει ήδη αφαιρεθεί από το κεφάλαιο των εταίρων, άρα δεν μοιράζεται ξανά
+  const dist = CF.monthly.map((v, m) => v - (CF.grants[m] || 0)).map(v => v > 0 ? v * dv : v);
   const y1 = dist.slice(0, 12).reduce((a, b) => a + b, 0);
   const mFull = Math.max(0, R.net - CF.loan.pay) * dv;
   const ser = S.partners.map((p, i) => {
@@ -2015,7 +2023,7 @@ function refresh() {
     ['Καθαρό/μήνα', `<span class="${sgn(R.net)}">${eur(R.net)}</span>`],
     ['Κόστος/μήνα', eur(R.costs), costTip],
     ['Έσοδα/μήνα', eur(R.revenue)],
-    ['Κεφάλαιο', eur(C.total)],
+    ['Κεφάλαιο', eur(C.net), capTip(C)],
     ['Απόσβεση', CF.payback ? `${CF.payback} μήνες` : '—'],
     ['Πελάτες/μήνα', num(R.clients)]
   ].map(([l, v, t]) => `<div class="st"${t ? ` data-tip="${attr(t)}"` : ''}><span>${l}</span><b>${v}</b></div>`).join('');
@@ -2028,7 +2036,7 @@ function refresh() {
     $('tgtcmp').innerHTML = [
       ['Καθαρό/μήνα', `${eur(R.net)}${d(R.net, RB.net)}`, `τωρινά ${eur(RB.net)}`],
       ['Απόσβεση', CF.payback ? `${CF.payback} μήνες` : `> ${CF.H}`, `τωρινά ${FB.payback ? FB.payback + ' μήνες' : '> ' + FB.H}`],
-      ['Κεφάλαιο', `${eur(C.total)}${d(C.total, CB.total, true)}`, `τωρινά ${eur(CB.total)}`],
+      ['Κεφάλαιο εταίρων', `${eur(C.net)}${d(C.net, CB.net, true)}`, `τωρινά ${eur(CB.net)}`],
       ['Πελάτες/μήνα', num(R.clients), `τωρινά ${num(RB.clients)} · νεκρό σημείο ${BT.cpd != null ? num1(BT.cpd) : '—'}`]
     ].map(([l, v, e]) => `<div><span>${l}</span><b>${v}</b><span>${e}</span></div>`).join('');
   }
