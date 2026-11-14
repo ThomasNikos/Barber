@@ -251,6 +251,9 @@ body.play header.top::before{content:"";display:block;height:4px;background:var(
 #refreshBtn.spin svg{animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .grantbox{margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--surface2)}
+.seg{display:inline-flex;background:var(--surface2);border-radius:9px;padding:3px;gap:2px}
+.seg button{border:0;background:none;padding:5px 10px;border-radius:7px;font-size:13px;color:var(--muted);font-weight:500}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:600}
 @media print{header.top nav,.hbtns,.x,.btn{display:none!important} header.top{position:static}}
 </style>
 </head>
@@ -1162,11 +1165,16 @@ function rBarbers() {
     ${S.barbers.map((b, i) => barberCard(b, i)).join('')}
     <button class="card" data-act="addBarber" style="border-style:dashed;color:var(--muted);min-height:120px;font-weight:600">+ Προσθήκη κουρέα</button>
   </div>
-  <div class="card sec"><h3>Τι φέρνει ο καθένας</h3><div id="bb-chart"></div></div>
-  <div class="card sec"><h3>Σύνοψη ανά κουρέα</h3><div class="scroll" id="bb-sum"></div></div>`;
+  <div class="card sec"><div class="cathd" style="flex-wrap:wrap;gap:8px"><h3 style="margin:0">Τι φέρνει ο καθένας</h3>${periodSeg()}</div><div id="bb-chart" style="margin-top:10px"></div></div>
+  <div class="card sec"><div class="cathd" style="flex-wrap:wrap;gap:8px"><h3 style="margin:0">Σύνοψη ανά κουρέα</h3>${periodSeg()}</div><div class="scroll" id="bb-sum" style="margin-top:10px"></div></div>`;
 }
 const OT_OPEN = new Set();
 document.addEventListener('toggle', e => { const d = e.target; if (d.matches && d.matches('details.ot')) { if (d.open) OT_OPEN.add(+d.dataset.i); else OT_OPEN.delete(+d.dataset.i); } }, true);
+/* φίλτρο περιόδου για «Τι φέρνει ο καθένας» */
+const PERIODS = { day: ['Ημέρα', 'την ημέρα'], week: ['Εβδομάδα', 'την εβδομάδα'], month: ['Μήνας', 'τον μήνα'], year: ['Έτος', 'τον χρόνο'] };
+let PERIOD = PERIODS[ls.get('barber.period')] ? ls.get('barber.period') : 'month';
+const periodF = () => ({ day: 1 / S.settings.daysPerMonth, week: 12 / 52, month: 1, year: 12 })[PERIOD];
+const periodSeg = () => `<div class="seg">${Object.entries(PERIODS).map(([k, [l]]) => `<button class="${k === PERIOD ? 'on' : ''}" data-act="period" data-p="${k}">${l}</button>`).join('')}</div>`;
 function barberCard(b, i) {
   const p = `barbers.${i}`;
   let f = '';
@@ -1206,17 +1214,20 @@ function fBarbers(R) {
     <div><span>Παίρνει ο ίδιος</span><b>${b.mode === 'partner' && !b.partnerFee ? '—' : eur(b.barberEarn)}</b></div>
     ${b.otCuts > 0 ? `<div style="grid-column:1/-1"><span>Υπερωρίες: ${num1(b.otHours)} ώρες → +${num(b.otCuts)} πελάτες${b.otPay ? ` · κόστος ${eur(b.otPay * (1 + S.settings.employerRate / 100))} με εισφορές` : ''}</span><b class="${sgn(b.otGain)}">${b.otGain >= 0 ? 'μένουν' : 'χάνονται'} ${eur(Math.abs(b.otGain))}/μήνα</b> <span>προ φόρου</span></div>` : ''}
     <div style="grid-column:1/-1"><span>${esc(b.barberNote)}</span></div>`));
+  const pf = periodF(), pl = PERIODS[PERIOD][1];
+  const e2 = v => PERIOD === 'day' ? eur2(v * pf) : eur(v * pf), n2 = v => PERIOD === 'day' || PERIOD === 'week' ? num1(v * pf) : num(v * pf);
   const mx = Math.max(1, ...R.barbers.flatMap(b => [Math.abs(b.contrib), Math.max(0, b.barberEarn)]));
-  setHTML('bb-chart', legend([['var(--c1)', 'Μένει στο μαγαζί', 'sq'], ['var(--c2)', 'Παίρνει ο κουρέας', 'sq']]) + R.barbers.map(b => {
-    const tip = attr(tipHTML(`${esc(b.name)} · ${MODES[b.mode].label}`, [['', 'Πελάτες/μήνα', num(b.cuts)], ['', 'Τζίρος με ΦΠΑ', eur(b.gross)], ['var(--c1)', 'Μένει στο μαγαζί', eur(b.contrib)], ['var(--c2)', 'Παίρνει ο κουρέας', b.mode === 'partner' && !b.partnerFee ? '—' : eur(b.barberEarn)]]));
-    return `<div class="hb" data-tip="${tip}"><div class="nm"><span>${esc(b.name)} <span class="mode">${MODES[b.mode].label}</span></span><span class="small">${num(b.cuts)} πελάτες</span></div>
-      <div class="tr2"><div class="bar" style="width:${Math.abs(b.contrib) / mx * 75}%;background:${b.contrib >= 0 ? 'var(--c1)' : 'var(--neg)'}"></div><span class="v">${eur(b.contrib)}</span></div>
-      <div class="tr2"><div class="bar" style="width:${Math.max(0, b.barberEarn) / mx * 75}%;background:var(--c2)"></div><span class="v">${b.mode === 'partner' && !b.partnerFee ? 'εταίρος' : eur(b.barberEarn)}</span></div></div>`;
+  setHTML('bb-chart', legend([['var(--c1)', `Μένει στο μαγαζί ${pl}`, 'sq'], ['var(--c2)', `Παίρνει ο κουρέας ${pl}`, 'sq']]) + R.barbers.map(b => {
+    const tip = attr(tipHTML(`${esc(b.name)} · ${MODES[b.mode].label} · ${pl}`, [['', 'Πελάτες', n2(b.cuts)], ['', 'Τζίρος με ΦΠΑ', e2(b.gross)], ['var(--c1)', 'Μένει στο μαγαζί', e2(b.contrib)], ['var(--c2)', 'Παίρνει ο κουρέας', b.mode === 'partner' && !b.partnerFee ? '—' : e2(b.barberEarn)]]));
+    return `<div class="hb" data-tip="${tip}"><div class="nm"><span>${esc(b.name)} <span class="mode">${MODES[b.mode].label}</span></span><span class="small">${n2(b.cuts)} πελάτες ${pl} · τζίρος ${e2(b.gross)}</span></div>
+      <div class="tr2"><div class="bar" style="width:${Math.abs(b.contrib) / mx * 75}%;background:${b.contrib >= 0 ? 'var(--c1)' : 'var(--neg)'}"></div><span class="v">${e2(b.contrib)}</span></div>
+      <div class="tr2"><div class="bar" style="width:${Math.max(0, b.barberEarn) / mx * 75}%;background:var(--c2)"></div><span class="v">${b.mode === 'partner' && !b.partnerFee ? 'εταίρος' : e2(b.barberEarn)}</span></div></div>`;
   }).join(''));
-  const t = R.barbers.reduce((a, b) => ({ cuts: a.cuts + b.cuts, gross: a.gross + b.gross, contrib: a.contrib + b.contrib }), { cuts: 0, gross: 0, contrib: 0 });
+  const t = R.barbers.reduce((a, b) => ({ cuts: a.cuts + b.cuts, gross: a.gross + b.gross, cost: a.cost + b.staff + b.consum + b.card + (b.partnerFee || 0), contrib: a.contrib + b.contrib }), { cuts: 0, gross: 0, cost: 0, contrib: 0 });
   setHTML('bb-sum', `<table class="tbl"><tr><th>Κουρέας</th><th>Μοντέλο</th><th class="num">Πελάτες</th><th class="num">Τζίρος με ΦΠΑ</th><th class="num">Κόστος για μαγαζί</th><th class="num">Μένει στο μαγαζί</th></tr>
-    ${R.barbers.map(b => `<tr><td>${esc(b.name)}</td><td>${MODES[b.mode].label}</td><td class="num">${num(b.cuts)}</td><td class="num">${eur(b.gross)}</td><td class="num">${eur(b.staff + b.consum + b.card)}</td><td class="num ${sgn(b.contrib)}">${eur(b.contrib)}</td></tr>`).join('')}
-    <tr style="font-weight:700"><td>Σύνολο</td><td></td><td class="num">${num(t.cuts)}</td><td class="num">${eur(t.gross)}</td><td></td><td class="num ${sgn(t.contrib)}">${eur(t.contrib)}</td></tr></table>
+    ${R.barbers.map(b => `<tr><td>${esc(b.name)}</td><td>${MODES[b.mode].label}</td><td class="num">${n2(b.cuts)}</td><td class="num">${e2(b.gross)}</td><td class="num">${e2(b.staff + b.consum + b.card + (b.partnerFee || 0))}</td><td class="num ${sgn(b.contrib)}">${e2(b.contrib)}</td></tr>`).join('')}
+    <tr style="font-weight:700"><td>Σύνολο ${pl}</td><td></td><td class="num">${n2(t.cuts)}</td><td class="num">${e2(t.gross)}</td><td class="num">${e2(t.cost)}</td><td class="num ${sgn(t.contrib)}">${e2(t.contrib)}</td></tr></table>
+    ${PERIOD === 'day' ? `<p class="small">Ανά εργάσιμη ημέρα (${num(S.settings.daysPerMonth)} τον μήνα).</p>` : PERIOD === 'week' ? '<p class="small">Μέσος όρος εβδομάδας (μήνας × 12 ÷ 52).</p>' : PERIOD === 'year' ? '<p class="small">Πλήρης λειτουργία × 12, χωρίς αυξήσεις και σταδιακή εκκίνηση.</p>' : ''}
     <p class="small">«Μένει στο μαγαζί» = ό,τι φέρνει ο κουρέας μείον μισθό/ποσοστό, αναλώσιμα και προμήθεια κάρτας. Από αυτό πληρώνονται ενοίκιο, μπαρίστα και πάγια.</p>`);
 }
 
@@ -1964,6 +1975,7 @@ const ACTIONS = {
     save(); schedulePush(); renderView(); toast(v ? 'Κλειδώθηκε για όλους' : 'Ξεκλειδώθηκε'); return false;
   },
   histReload: () => { loadHistory(); return false; },
+  period: d => { PERIOD = d.p; ls.set('barber.period', PERIOD); document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('on', b.dataset.p === PERIOD)); refresh(); return false; },
   restore: d => { restoreVersion(d.id, d.at); return false; },
   tab: d => { TAB = d.tab; ls.set(LS_TAB, TAB); renderView(); window.scrollTo({ top: 0 }); },
   addBarber: () => { S.barbers.push(blankBarber(S.barbers.length + 1)); },
