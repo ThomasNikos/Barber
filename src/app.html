@@ -256,6 +256,16 @@ body.play header.top::before{content:"";display:block;height:4px;background:var(
 .seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:600}
 .hball{border-top:1px solid var(--line);padding-top:10px;margin-top:14px}
 .hl{flex:none;width:118px;font-size:13px;color:var(--muted)}
+.wf{display:flex;flex-direction:column;gap:6px;margin:6px 0 4px}
+.wfr{display:grid;grid-template-columns:150px 1fr 86px;gap:8px;align-items:center;font-size:13px}
+.wfr.t{font-weight:700}
+.wl{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wfr.t .wl{color:var(--ink)}
+.wt{position:relative;height:16px;background:var(--surface2);border-radius:4px}
+.wb{position:absolute;top:2px;bottom:2px;border-radius:3px}
+.wt .z{position:absolute;top:-2px;bottom:-2px;width:1px;background:var(--muted)}
+.wv{text-align:right;white-space:nowrap}
+@media (max-width:600px){.wfr{grid-template-columns:104px 1fr 72px;font-size:12px}}
 @media print{header.top nav,.hbtns,.x,.btn{display:none!important} header.top{position:static}}
 </style>
 </head>
@@ -822,6 +832,59 @@ document.addEventListener('scroll', hideTip, { passive: true });
 const monthName = i => `${i}ος μήνας`;
 const MODE_SER = { salary: ['var(--c1)', 'Όλοι μισθωτοί'], commission: ['var(--c2)', 'Όλοι με ποσοστό'], rent: ['var(--c3)', 'Όλοι με ενοικίαση θέσης'] };
 
+/* ---------- Από τα τωρινά στον Στόχο (ή στο «Παίξε») ---------- */
+const OT_KEYS = ['cutsPerDay', 'otHours', 'otUnit', 'otHoursDay', 'otDays', 'otCutsPerHour'];
+function bridgeSteps(B, T) {
+  const steps = [
+    ['Κουρέματα & υπερωρίες', s => s.barbers.forEach(b => { const t = T.barbers.find(x => x.name === b.name); if (t) OT_KEYS.forEach(k => { b[k] = t[k]; }); })],
+    ['Τιμές', s => { s.services = clone(T.services); s.barbers.forEach(b => { const t = T.barbers.find(x => x.name === b.name); if (t) b.ticket = t.ticket; }); }],
+    ['Μισθοί, συμφωνίες, άτομα', s => { s.barbers = clone(T.barbers); s.partners = clone(T.partners); }],
+    ['Πάγια', s => { s.fixed = clone(T.fixed); }],
+    ['Καφές & μπαρίστα', s => { s.barista = clone(T.barista); }],
+    ['Προϊόντα', s => { s.retail = clone(T.retail); }],
+    ['Παραδοχές & λοιπά', s => { Object.assign(s, clone(T)); }]
+  ];
+  let s = clone(B), prev = compute(s).net;
+  const out = [];
+  for (const [label, fn] of steps) { fn(s); const n = compute(s).net; out.push({ label, delta: n - prev }); prev = n; }
+  return out;
+}
+function bridgeHTML(B, T, toName) {
+  const nb = compute(B).net, nt = compute(T).net, steps = bridgeSteps(B, T).filter(x => Math.abs(x.delta) >= 1);
+  const rows = [{ label: 'Τωρινά', from: 0, to: nb, kind: 'tot' }];
+  let c = nb;
+  steps.forEach(x => { rows.push({ label: x.label, from: c, to: c + x.delta, kind: x.delta >= 0 ? 'up' : 'down', delta: x.delta }); c += x.delta; });
+  rows.push({ label: toName, from: 0, to: nt, kind: 'tot2' });
+  const vals = rows.flatMap(r => [r.from, r.to]).concat(0), lo = Math.min(...vals), hi = Math.max(...vals), span = (hi - lo) || 1;
+  const pos = v => (v - lo) / span * 100;
+  const color = { tot: 'var(--c8)', tot2: 'var(--accent)', up: 'var(--pos)', down: 'var(--neg)' };
+  return `<div class="wf">${rows.map(r => {
+    const a = Math.min(r.from, r.to), b = Math.max(r.from, r.to);
+    const txt = r.kind.startsWith('tot') ? eur(r.to) : `${r.delta >= 0 ? '+' : '−'}${eur(Math.abs(r.delta))}`;
+    return `<div class="wfr${r.kind.startsWith('tot') ? ' t' : ''}" data-tip="${attr(tipHTML(esc(r.label), [['', r.kind.startsWith('tot') ? 'Καθαρό/μήνα' : 'Αλλαγή στο καθαρό/μήνα', txt]]))}"><span class="wl">${esc(r.label)}</span><div class="wt">${lo < 0 ? `<i class="z" style="left:${pos(0)}%"></i>` : ''}<div class="wb" style="left:${pos(a)}%;width:${Math.max(0.6, pos(b) - pos(a))}%;background:${color[r.kind]}"></div></div><span class="wv ${r.kind === 'up' ? 'pos' : r.kind === 'down' ? 'neg' : ''}">${txt}</span></div>`;
+  }).join('')}</div>`;
+}
+function fBridge() {
+  const box = $('ov-bridge'); if (!box) return;
+  const to = VIEW === 'play' ? cur('play') : cur('target');
+  const card = box.closest('.card');
+  if (!to) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  const B = cur('base'), toName = VIEW === 'play' ? 'Παίξε' : 'Στόχος';
+  $('ov-bridge-title').textContent = `Από τα τωρινά ${VIEW === 'play' ? 'στο «Παίξε»' : 'στον Στόχο'}`;
+  // σωρευτικό ταμείο: δύο γραμμές
+  const cB = cashflow(B, capexTotals(B, compute(B))), cT = cashflow(to, capexTotals(to, compute(to)));
+  const H = Math.min(cB.H, cT.H), vB = [cB.start, ...cB.cum.slice(0, H)], vT = [cT.start, ...cT.cum.slice(0, H)];
+  const w = cw('ov-bridge-cash'), step = w < 600 ? 12 : 6, ticks = []; for (let i = 0; i <= H; i += step) ticks.push(i);
+  const ser = [{ name: 'Τωρινά', color: 'var(--c8)', values: vB, dash: true }, { name: toName, color: 'var(--accent)', values: vT }];
+  box.innerHTML = `<p class="small" style="margin-top:-6px">Πώς αλλάζει το καθαρό κέρδος/μήνα, βήμα-βήμα, από τα τωρινά νούμερα ${VIEW === 'play' ? 'σε αυτά που παίζεις' : 'στον Στόχο'}.</p>` + bridgeHTML(B, to, toName);
+  setHTML('ov-bridge-cash', legend(ser.map(x => [x.color, x.name, x.dash ? 'dash' : ''])) + lineChart({
+    w, n: H + 1, series: ser, ticks, xLabel: i => i === 0 ? (w < 600 ? '0' : 'Έναρξη') : i + 'ος', label: 'Σωρευτικό ταμείο: τωρινά και ' + toName,
+    marks: [cT.payback && cT.payback <= H ? { i: cT.payback, v: vT[cT.payback], label: `${toName}: απόσβεση μήνας ${cT.payback}` } : null].filter(Boolean),
+    tip: i => tipHTML(i === 0 ? 'Έναρξη' : monthName(i), [['var(--c8)', 'Τωρινά', eur(vB[i])], ['var(--accent)', toName, eur(vT[i])], ['', 'Διαφορά', eur(vT[i] - vB[i])]])
+  }) + `<p class="small">Απόσβεση: τωρινά ${cB.payback ? cB.payback + 'ος μήνας' : '> ' + cB.H + ' μήνες'} · ${toName} ${cT.payback ? cT.payback + 'ος μήνας' : '> ' + cT.H + ' μήνες'}.</p>`);
+}
+
 /* ---------- Overview ---------- */
 function rOverview() {
   return `
@@ -843,6 +906,7 @@ function rOverview() {
     </div>
     <div class="card"><h3>Μηνιαίος λογαριασμός (πλήρης λειτουργία, 1ο έτος)</h3><div id="ov-pl"></div></div>
   </div>
+  <div class="card sec" style="display:none"><h3 id="ov-bridge-title">Από τα τωρινά στον Στόχο</h3><div id="ov-bridge"></div><div class="sub2">Σωρευτικό ταμείο</div><div id="ov-bridge-cash"></div></div>
   <div class="card sec">
     <h3>Ταμείο εταίρων από την πρώτη μέρα</h3>
     <p class="small" style="margin-top:-6px" id="ov-cf-sub"></p>
@@ -918,7 +982,7 @@ function fOverview(R) {
   setHTML('ov-cf', lineChart({
     w, n: H + 1, label: 'Σωρευτικό ταμείο εταίρων ανά μήνα', area: true,
     series: [{ name: 'Ταμείο', color: 'var(--accent)', values: vals }],
-    ticks, xLabel: i => i === 0 ? 'Έναρξη' : i + 'ος',
+    ticks, xLabel: i => i === 0 ? (w < 600 ? '0' : 'Έναρξη') : i + 'ος',
     marks: CF.payback ? [{ i: CF.payback, v: vals[CF.payback], label: `απόσβεση · μήνας ${CF.payback}` }] : [],
     tip: i => tipHTML(i === 0 ? 'Έναρξη' : monthName(i), [['var(--accent)', 'Σωρευτικά', eur(vals[i])]].concat(i ? [['', 'Αυτόν τον μήνα', eur(CF.monthly[i - 1])], ['', 'Πελατεία', num(rampK(S, i) * 100) + '%']] : []))
   }));
@@ -954,6 +1018,7 @@ function fOverview(R) {
   setHTML('ov-donut', `<p class="small" style="margin-top:-6px">Από τα ${eur(R.revenue)} εσόδων του μήνα (χωρίς ΦΠΑ).</p>` + donutBlock(dParts, { big: eur(R.revenue), small: 'έσοδα/μήνα' }));
 
   setHTML('ov-workers', workersChart(R, true));
+  fBridge();
   // per-cut
   if (R.shopCuts > 0) {
     const n = R.shopCuts, g = R.shopGross / n;
@@ -1444,7 +1509,7 @@ function fPartners(R) {
   const w = cw('pt-chart'), H = CF.H, step = w < 600 ? 12 : 6, ticks = [];
   for (let i = 0; i <= H; i += step) ticks.push(i);
   setHTML('pt-chart', legend(ser.map(x => [x.color, esc(x.name)])) + lineChart({
-    w, n: H + 1, series: ser, ticks, xLabel: i => i === 0 ? 'Έναρξη' : i + 'ος', label: 'Σωρευτική θέση κάθε εταίρου',
+    w, n: H + 1, series: ser, ticks, xLabel: i => i === 0 ? (w < 600 ? '0' : 'Έναρξη') : i + 'ος', label: 'Σωρευτική θέση κάθε εταίρου',
     tip: i => tipHTML(i === 0 ? 'Έναρξη' : monthName(i), ser.map(x => [x.color, esc(x.name), eur(x.values[i])]))
   }));
   S.partners.forEach((p, i) => {
