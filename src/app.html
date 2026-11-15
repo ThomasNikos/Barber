@@ -266,6 +266,24 @@ body.play header.top::before{content:"";display:block;height:4px;background:var(
 .wt .z{position:absolute;top:-2px;bottom:-2px;width:1px;background:var(--muted)}
 .wv{text-align:right;white-space:nowrap}
 @media (max-width:600px){.wfr{grid-template-columns:104px 1fr 72px;font-size:12px}}
+.bizbtn{display:flex;align-items:center;gap:6px;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}
+.bizbtn .caret{font-size:12px;color:var(--muted);margin-top:2px}
+.logo>div{position:relative}
+.bizmenu{position:absolute;top:30px;left:-4px;z-index:30;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:6px;display:none;min-width:240px}
+.bizmenu.on{display:block}
+.bizmenu button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;padding:8px 10px;border-radius:9px;color:var(--ink)}
+.bizmenu button:hover,.bizmenu button.on{background:var(--surface2)}
+.bizmenu small{display:block;color:var(--muted);font-size:12px}
+.pole.sm,.cup.sm{width:10px;height:26px;flex:none}
+.cup{width:22px;height:28px;border-radius:4px 4px 9px 9px;background:linear-gradient(#5a3a22 0 32%,#f3e6d4 32% 100%);border:2px solid var(--ink);position:relative}
+.cup.sm{width:16px;height:22px}
+body.cafe .pole#bizIcon{width:20px;height:26px;border-radius:3px 3px 8px 8px;background:linear-gradient(#6b4226 0 34%,#f3e6d4 34% 100%);border:2px solid var(--ink)}
+.mhead{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
+.mitem{padding:6px 0;border-bottom:1px dashed var(--line)}
+.mname{display:flex;align-items:center;gap:6px}
+.mname input{flex:1}
+.mvals{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:4px}
+@media (max-width:600px){.lg-only{display:none}}
 @media print{header.top nav,.hbtns,.x,.btn{display:none!important} header.top{position:static}}
 </style>
 </head>
@@ -273,7 +291,8 @@ body.play header.top::before{content:"";display:block;height:4px;background:var(
 <header class="top">
   <div class="wrap">
     <div class="brand">
-      <div class="logo"><div class="pole"></div><div><h1>Barber</h1><small id="subtitle">Καλαμάτα · επιχειρηματικό πλάνο</small></div></div>
+      <div class="logo"><div class="pole" id="bizIcon"></div><div><button class="bizbtn" data-act="bizMenu" id="bizBtn" title="Αλλαγή επιχείρησης"><h1 id="bizName">Barber</h1><span class="caret">▾</span></button>
+        <div class="bizmenu" id="bizMenu"><button data-act="setBiz" data-b="barber"><span class="pole sm"></span><span><b>Barber</b><small>Κουρείο · Καλαμάτα</small></span></button><button data-act="setBiz" data-b="coffee"><span class="cup sm"></span><span><b>Coffeeshop</b><small>Καφέ take-away · Ν. Ηράκλειο</small></span></button></div><small id="subtitle">Καλαμάτα · επιχειρηματικό πλάνο</small></div></div>
       <div class="hbtns">
         <button class="ghost viewbtn" data-act="play" id="playBtn"></button>
         <button class="ghost viewbtn" data-act="view" id="viewBtn"></button>
@@ -420,30 +439,102 @@ function normCapex(x) {
   x.amount = Math.round(x.qty * x.unit * 100) / 100;
   return x;
 }
+/* =========================================================
+   COFFEESHOP — δεύτερη, ξεχωριστή επιχείρηση (καφέ take-away, Νέο Ηράκλειο)
+   ========================================================= */
+const DEFAULTS_COFFEE = {
+  v: 1, kind: 'coffee',
+  settings: {
+    daysPerMonth: 28, vatCafe: 13, employerRate: 21.79, salaryMonths: 14, cardShare: 80, cardFee: 1.0,
+    corpTax: 22, dividendTax: 5, rampMonths: 3, rampStart: 85, reserveMonths: 2, contingencyPct: 10, horizon: 60,
+    priceGrowth: 3, wageGrowth: 4.5, costGrowth: 3, goalNet: 0
+  },
+  sales: { ordersPerDay: 160, itemsPerOrder: 1.25, openHours: 14 },
+  menu: [
+    { name: 'Freddo espresso', price: 2.5, mix: 35, costPct: 18 },
+    { name: 'Freddo cappuccino', price: 3.0, mix: 25, costPct: 22 },
+    { name: 'Espresso / cappuccino ζεστό', price: 2.6, mix: 10, costPct: 20 },
+    { name: 'Φίλτρου / ελληνικός', price: 2.0, mix: 5, costPct: 15 },
+    { name: 'Σοκολάτα, τσάι, άλλα ροφήματα', price: 3.2, mix: 5, costPct: 30 },
+    { name: 'Χυμοί, αναψυκτικά, νερά', price: 2.0, mix: 8, costPct: 45 },
+    { name: 'Σνακ, κουλούρια, σφολιάτες', price: 2.8, mix: 12, costPct: 50 }
+  ],
+  staff: [
+    { name: 'Barista 1', salary: 1000, fte: 100 },
+    { name: 'Barista 2', salary: 950, fte: 100 },
+    { name: 'Barista 3 (μερική)', salary: 920, fte: 50 }
+  ],
+  fixed: [
+    { name: 'Ενοίκιο (50 τ.μ.)', amount: 1100, note: 'Εκτίμηση — ζητήστε το μισθωτήριο από τον πωλητή' },
+    { name: 'Ρεύμα', amount: 400, note: 'Μηχανή espresso, ψυγεία, κλιματισμός' },
+    { name: 'Νερό', amount: 60, note: '' },
+    { name: 'Internet & τηλέφωνο', amount: 30, note: '' },
+    { name: 'Λογιστής & μισθοδοσία', amount: 200, note: '' },
+    { name: 'Ασφάλεια καταστήματος', amount: 40, note: '' },
+    { name: 'POS & λογισμικό', amount: 30, note: '' },
+    { name: 'Τέλη τραπεζοκαθισμάτων (Δήμος)', amount: 40, note: '4 τραπεζοκαθίσματα' },
+    { name: 'Συντήρηση μηχανημάτων', amount: 80, note: '' },
+    { name: 'Καθαριότητα & αναλώσιμα', amount: 60, note: '' },
+    { name: 'Διαφήμιση', amount: 100, note: '' }
+  ],
+  capex: [
+    { cat: 'Αγορά επιχείρησης', name: 'Τιμή αγοράς (αέρας + πλήρης εξοπλισμός)', qty: 1, unit: 45000, on: true, note: 'Τιμή αγγελίας — διαπραγματεύσιμη' },
+    { cat: 'Αγορά επιχείρησης', name: 'Νομικός & λογιστικός έλεγχος', qty: 1, unit: 1200, on: true, note: 'Βιβλία, χρέη, συμβάσεις προσωπικού, μισθωτήριο' },
+    { cat: 'Αγορά επιχείρησης', name: 'Συμβολαιογράφος / σύμβαση μεταβίβασης', qty: 1, unit: 800, on: true, note: '' },
+    { cat: 'Χώρος & άδειες', name: 'Εγγύηση ενοικίου (2 μήνες)', qty: 1, unit: 2200, on: true, note: '' },
+    { cat: 'Χώρος & άδειες', name: 'Γνωστοποίηση λειτουργίας / μεταβίβαση άδειας ΚΥΕ', qty: 1, unit: 600, on: true, note: '' },
+    { cat: 'Χώρος & άδειες', name: 'Άδεια τραπεζοκαθισμάτων', qty: 1, unit: 400, on: true, note: '' },
+    { cat: 'Χώρος & άδειες', name: 'Σύσταση εταιρείας', qty: 1, unit: 600, on: true, note: '' },
+    { cat: 'Εκκίνηση', name: 'Αρχικό απόθεμα (καφές, γάλα, συσκευασίες, σνακ)', qty: 1, unit: 1500, on: true, note: '' },
+    { cat: 'Εκκίνηση', name: 'Ανανέωση, branding, μικροεπισκευές', qty: 1, unit: 2500, on: true, note: '' },
+    { cat: 'Εκκίνηση', name: 'Service μηχανημάτων', qty: 1, unit: 400, on: true, note: '' },
+    { cat: 'Εκκίνηση', name: 'Διαφήμιση επαναλειτουργίας', qty: 1, unit: 600, on: true, note: '' }
+  ],
+  finance: { loan: 0, rate: 6.5, years: 5, grantOn: false, grant: 0, grantMonth: 12, grantNonRepay: true, grantRepayYears: 5, grantGrace: 12 },
+  partners: [
+    { name: 'Θωμάς', capPct: 50, share: 50, role: 'Επενδυτής / διαχειριστής' },
+    { name: 'Χρήστος', capPct: 50, share: 50, role: 'Επενδυτής / διαχειριστής' }
+  ]
+};
+const isCafe = s => !!s && s.kind === 'coffee';
 function hydrate(o) {
-  const d = clone(DEFAULTS);
+  const coffee = isCafe(o);
+  const d = clone(coffee ? DEFAULTS_COFFEE : DEFAULTS);
   const r = (!o || o.v !== 1) ? d : Object.assign(d, o, {
     settings: Object.assign(d.settings, o.settings || {}),
-    barista: Object.assign(d.barista, o.barista || {}),
-    retail: Object.assign(d.retail, o.retail || {}),
     finance: Object.assign(d.finance, o.finance || {})
+  }, coffee ? { sales: Object.assign(d.sales, o.sales || {}) } : {
+    barista: Object.assign(d.barista, o.barista || {}),
+    retail: Object.assign(d.retail, o.retail || {})
   });
   (r.capex || []).forEach(normCapex);
   return r;
 }
+const hydrateCafe = o => hydrate(Object.assign({ v: 1 }, o || {}, { kind: 'coffee' }));
 let S = (() => { try { return hydrate(JSON.parse(ls.get(LS_KEY))); } catch (e) { return clone(DEFAULTS); } })();
 let TAB = ls.get(LS_TAB) || 'overview';
-/* Τρία ξεχωριστά σετ νούμερων. Το S είναι πάντα αυτό που βλέπεις.
-   base = «Τωρινά» (κοινά), target = «Στόχος» (κοινός), play = «Παίξε» (μόνο σε αυτή τη συσκευή, δεν αποθηκεύεται για τους άλλους). */
-const LS_TGT = 'barber.target.v1', LS_PLAY = 'barber.play.v1', LS_VIEW = 'barber.view';
+/* Δύο επιχειρήσεις (BIZ: barber | coffee), καθεμία με τρία σετ νούμερων. Το S είναι πάντα αυτό που βλέπεις.
+   base = «Τωρινά» (κοινά), target = «Στόχος» (κοινός), play = «Παίξε» (μόνο σε αυτή τη συσκευή). */
+const LS_TGT = 'barber.target.v1', LS_PLAY = 'barber.play.v1', LS_VIEW = 'barber.view', LS_BIZ = 'barber.biz';
+const KEYS = {
+  barber: { base: LS_KEY, target: LS_TGT, play: LS_PLAY },
+  coffee: { base: 'barber.cafe.state.v1', target: 'barber.cafe.target.v1', play: 'barber.cafe.play.v1' }
+};
 const loadLS = k => { try { const o = JSON.parse(ls.get(k)); return o ? hydrate(o) : null; } catch (e) { return null; } };
-const ST = { base: S, target: loadLS(LS_TGT), play: loadLS(LS_PLAY) };
+const STORE = {
+  barber: { base: S, target: loadLS(LS_TGT), play: loadLS(LS_PLAY) },
+  coffee: { base: loadLS(KEYS.coffee.base) || hydrate(clone(DEFAULTS_COFFEE)), target: loadLS(KEYS.coffee.target), play: loadLS(KEYS.coffee.play) }
+};
+let BIZ = ls.get(LS_BIZ) === 'coffee' ? 'coffee' : 'barber';
+let ST = STORE[BIZ];
 let VIEW = ['base', 'target', 'play'].includes(ls.get(LS_VIEW)) ? ls.get(LS_VIEW) : 'base';
 if (VIEW !== 'base' && !ST[VIEW]) ST[VIEW] = clone(ST.base);
 S = ST[VIEW];
 const cur = v => v === VIEW ? S : ST[v];
 const baseState = () => cur('base');
 const targetState = () => cur('target');
+// επιχείρηση b, σετ v (λαμβάνει υπόψη ότι το S μπορεί να είναι πιο φρέσκο από το STORE)
+const curOf = (b, v) => (b === BIZ && v === VIEW) ? S : STORE[b][v];
 function setView(v) {
   ST[VIEW] = S;
   VIEW = v;
@@ -451,22 +542,38 @@ function setView(v) {
   S = ST[v];
   ls.set(LS_VIEW, v);
 }
+function setBiz(b) {
+  if (b === BIZ) return;
+  ST[VIEW] = S;
+  BIZ = b; ST = STORE[b];
+  if (!ST[VIEW]) { ST[VIEW] = clone(ST.base); if (VIEW !== 'base') ST[VIEW].locked = false; }
+  S = ST[VIEW];
+  ls.set(LS_BIZ, b);
+  if (!TABS[TAB]) TAB = 'overview';
+}
 const save = () => {
   ST[VIEW] = S;
-  ls.set(LS_KEY, JSON.stringify(cur('base')));
-  const t = cur('target'); if (t) ls.set(LS_TGT, JSON.stringify(t)); else ls.del(LS_TGT);
-  const pl = cur('play'); if (pl) ls.set(LS_PLAY, JSON.stringify(pl));
+  for (const b of ['barber', 'coffee']) {
+    const K = KEYS[b];
+    ls.set(K.base, JSON.stringify(curOf(b, 'base')));
+    const t = curOf(b, 'target'); if (t) ls.set(K.target, JSON.stringify(t)); else ls.del(K.target);
+    const pl = curOf(b, 'play'); if (pl) ls.set(K.play, JSON.stringify(pl));
+  }
   if (VIEW !== 'play') schedulePush();
 };
 function applyShared(o) {
   const base = hydrate(o.state), tgt = o.target ? hydrate(o.target) : null;
-  ST.base = base; ST.target = tgt;
-  if (VIEW === 'base') S = base;
-  else if (VIEW === 'target') { S = tgt || clone(base); ST.target = tgt; }
-  ls.set(LS_KEY, JSON.stringify(base));
-  if (tgt) ls.set(LS_TGT, JSON.stringify(tgt)); else ls.del(LS_TGT);
+  const cb = o.coffee && o.coffee.state ? hydrateCafe(o.coffee.state) : null, ctg = o.coffee && o.coffee.target ? hydrateCafe(o.coffee.target) : null;
+  STORE.barber.base = base; STORE.barber.target = tgt;
+  STORE.coffee.base = cb || STORE.coffee.base || hydrate(clone(DEFAULTS_COFFEE)); STORE.coffee.target = ctg;
+  if (VIEW === 'base') S = ST.base;
+  else if (VIEW === 'target') S = ST.target || clone(ST.base);
+  ls.set(KEYS.barber.base, JSON.stringify(base));
+  if (tgt) ls.set(KEYS.barber.target, JSON.stringify(tgt)); else ls.del(KEYS.barber.target);
+  if (cb) ls.set(KEYS.coffee.base, JSON.stringify(cb));
+  if (ctg) ls.set(KEYS.coffee.target, JSON.stringify(ctg)); else ls.del(KEYS.coffee.target);
   ls.set(LS_SCN, JSON.stringify(o.scenarios || {}));
-  return { state: clone(base), target: tgt ? clone(tgt) : null, scenarios: o.scenarios || {} };
+  return { state: clone(base), target: tgt ? clone(tgt) : null, coffee: cb ? { state: clone(cb), target: ctg ? clone(ctg) : null } : null, scenarios: o.scenarios || {} };
 }
 
 function getPath(o, p) { return p.split('.').reduce((a, k) => a == null ? a : a[k], o); }
@@ -501,7 +608,36 @@ function avgTicket(s) {
 // ώρες υπερωρίας/μήνα: είτε απευθείας ανά μήνα είτε ώρες/ημέρα × ημέρες με υπερωρία
 const otMonthly = (b, st) => b.otUnit === 'day' ? (+b.otHoursDay || 0) * ((+b.otDays > 0) ? +b.otDays : st.daysPerMonth) : (+b.otHours || 0);
 const otAutoRate = (b, st) => (+b.salary || 0) / 25 * 6 / 40 * (1 + (+st.overtimePremium || 0) / 100);
+/* Coffeeshop: παραγγελίες/ημέρα × μέση απόδειξη (από το μενού) − προσωπικό − υλικά − πάγια.
+   opt.cpd = override παραγγελίες/ημέρα, opt.ticket = override μέση απόδειξη (με ΦΠΑ), opt.k / opt.y όπως στο κουρείο */
+function menuStats(s) {
+  const tot = s.menu.reduce((a, x) => a + (+x.mix || 0), 0) || 1;
+  const avgItem = s.menu.reduce((a, x) => a + (+x.price || 0) * (+x.mix || 0), 0) / tot;
+  const revW = s.menu.reduce((a, x) => a + (+x.price || 0) * (+x.mix || 0), 0) || 1;
+  const costPct = s.menu.reduce((a, x) => a + (+x.price || 0) * (+x.mix || 0) * (+x.costPct || 0), 0) / revW / 100;
+  return { avgItem, costPct };
+}
+function computeCafe(s, opt = {}) {
+  const st = s.settings, k = opt.k ?? 1, yr = opt.y || 0;
+  const gP = Math.pow(1 + (+st.priceGrowth || 0) / 100, yr), gW = Math.pow(1 + (+st.wageGrowth || 0) / 100, yr), gC = Math.pow(1 + (+st.costGrowth || 0) / 100, yr);
+  const vat = 1 + (+st.vatCafe || 0) / 100, er = 1 + st.employerRate / 100, sm = st.salaryMonths / 12;
+  const ms = menuStats(s), ipo = +s.sales.itemsPerOrder || 1;
+  const opd = opt.cpd ?? (+s.sales.ordersPerDay || 0);
+  const orders = opd * k * st.daysPerMonth;
+  const ticket = opt.ticket ?? ms.avgItem * ipo * gP;
+  const gross = orders * ticket, net = gross / vat;
+  const cost = { staff: 0, cogs: net * ms.costPct * gC / gP, card: gross * st.cardShare / 100 * st.cardFee / 100, fixed: s.fixed.reduce((a, x) => a + (+x.amount || 0), 0) * gC };
+  const staff = s.staff.map(p => { const c = (+p.salary || 0) * gW * sm * er * (+p.fte || 0) / 100; cost.staff += c; return { name: p.name, cost: c, earn: (+p.salary || 0) * gW * sm * (+p.fte || 0) / 100 }; });
+  const revenue = net, costs = Object.values(cost).reduce((a, b) => a + b, 0);
+  const preTax = revenue - costs, tax = Math.max(0, preTax) * st.corpTax / 100, netP = preTax - tax;
+  return { kind: 'coffee', barbers: [], staff, rev: { sales: net }, cost, revenue, costs, preTax, tax, net: netP, dist: netP > 0 ? netP * (1 - st.dividendTax / 100) : netP,
+    clients: orders, items: orders * ipo, grossReceipts: gross, avgTicket: ticket, avgItem: ms.avgItem * gP, cogsPct: ms.costPct, payrollBase: cost.staff, shopCuts: 0 };
+}
+// ετικέτες κόστους (κοινές για κουρείο και καφέ)
+const COST_LABELS = { staff: 'Προσωπικό / κουρείς', partner: 'Εταίροι (% τζίρου)', barista: 'Μπαρίστα', fixed: 'Πάγια', consum: 'Αναλώσιμα', coffee: 'Καφές (υλικά)', retail: 'Προϊόντα (κόστος)', cogs: 'Πρώτες ύλες & συσκευασίες', card: 'Προμήθειες καρτών' };
+const costParts = R => Object.entries(R.cost).filter(([, v]) => v > 0.5).map(([k, v]) => [isCafe(S) && k === 'staff' ? 'Προσωπικό' : (COST_LABELS[k] || k), v]);
 function compute(s, opt = {}) {
+  if (isCafe(s)) return computeCafe(s, opt);
   const st = s.settings, k = opt.k ?? 1, yr = opt.y || 0;
   const gP = Math.pow(1 + (+st.priceGrowth || 0) / 100, yr), gW = Math.pow(1 + (+st.wageGrowth || 0) / 100, yr), gC = Math.pow(1 + (+st.costGrowth || 0) / 100, yr);
   const cpc = st.consumablePerCut * gC;
@@ -664,11 +800,17 @@ function cashflow(s, C) {
 
 function breakeven(s) {
   const p0 = compute(s, { k: 0 }).preTax, p1 = compute(s, { k: 1 }).preTax;
+  if (isCafe(s)) {
+    const avg = +s.sales.ordersPerDay || 0;
+    if (p1 <= p0) return { k: null, cpd: null, avg, unit: 'παραγγ./ημέρα' };
+    const kk = -p0 / (p1 - p0);
+    return { k: kk, cpd: kk * avg, avg, unit: 'παραγγ./ημέρα' };
+  }
   const work = s.barbers.filter(b => b.mode !== 'rent');
   const avg = work.length ? work.reduce((a, b) => a + (+b.cutsPerDay || 0), 0) / work.length : 0;
-  if (p1 <= p0 || !work.length) return { k: null, cpd: null, avg };
+  if (p1 <= p0 || !work.length) return { k: null, cpd: null, avg, unit: 'κουρ./ημέρα' };
   const kk = -p0 / (p1 - p0);
-  return { k: kk, cpd: kk * avg, avg, clientsMonth: kk * avg * work.length * s.settings.daysPerMonth };
+  return { k: kk, cpd: kk * avg, avg, unit: 'κουρ./ημέρα', clientsMonth: kk * avg * work.length * s.settings.daysPerMonth };
 }
 
 /* =========================================================
@@ -691,7 +833,7 @@ function toast(t) { const e = $('toast'); e.textContent = t; e.classList.add('on
 /* =========================================================
    TABS
    ========================================================= */
-const TABS = {
+const TABS_BARBER = {
   overview: { label: 'Επισκόπηση', render: rOverview, fill: fOverview },
   minimums: { label: 'Ελάχιστα', render: rMinimums, fill: fMinimums },
   barbers: { label: 'Κουρείς & τιμές', render: rBarbers, fill: fBarbers },
@@ -702,6 +844,18 @@ const TABS = {
   settings: { label: 'Παραδοχές', render: rSettings, fill: () => {} },
   history: { label: 'Ιστορικό', render: rHistory, fill: () => {} }
 };
+const TABS_COFFEE = {
+  overview: { label: 'Επισκόπηση', render: rOverview, fill: fOverview },
+  minimums: { label: 'Ελάχιστα', render: rMinimums, fill: R => fMinimumsCafe(R) },
+  menu: { label: 'Μενού & πωλήσεις', render: rMenu, fill: fMenu },
+  staff: { label: 'Προσωπικό', render: rStaff, fill: fStaff },
+  capex: { label: 'Αγορά & έναρξη', render: rCapex, fill: fCapex },
+  fixed: { label: 'Μηνιαία έξοδα', render: rFixed, fill: fFixed },
+  partners: { label: 'Εταίροι', render: rPartners, fill: fPartners },
+  settings: { label: 'Παραδοχές', render: rSettings, fill: () => {} },
+  history: { label: 'Ιστορικό', render: rHistory, fill: () => {} }
+};
+const TABS = new Proxy({}, { get: (_, k) => (BIZ === 'coffee' ? TABS_COFFEE : TABS_BARBER)[k], ownKeys: () => Reflect.ownKeys(BIZ === 'coffee' ? TABS_COFFEE : TABS_BARBER), getOwnPropertyDescriptor: (_, k) => ({ enumerable: true, configurable: true, value: (BIZ === 'coffee' ? TABS_COFFEE : TABS_BARBER)[k] }) });
 
 /* ---------- Charts ---------- */
 const CHARTS = new Map();
@@ -839,9 +993,22 @@ document.addEventListener('scroll', hideTip, { passive: true });
 const monthName = i => `${i}ος μήνας`;
 const MODE_SER = { salary: ['var(--c1)', 'Όλοι μισθωτοί'], commission: ['var(--c2)', 'Όλοι με ποσοστό'], rent: ['var(--c3)', 'Όλοι με ενοικίαση θέσης'] };
 
+function bridgeStepsCafe(B, T) {
+  const steps = [
+    ['Παραγγελίες', s => { s.sales = clone(T.sales); s.settings.daysPerMonth = T.settings.daysPerMonth; }],
+    ['Τιμές & μενού', s => { s.menu = clone(T.menu); }],
+    ['Προσωπικό', s => { s.staff = clone(T.staff); }],
+    ['Πάγια', s => { s.fixed = clone(T.fixed); }],
+    ['Παραδοχές & λοιπά', s => { Object.assign(s, clone(T)); }]
+  ];
+  let s = clone(B), prev = compute(s).net; const out = [];
+  for (const [label, fn] of steps) { fn(s); const n = compute(s).net; out.push({ label, delta: n - prev }); prev = n; }
+  return out;
+}
 /* ---------- Από τα τωρινά στον Στόχο (ή στο «Παίξε») ---------- */
 const OT_KEYS = ['cutsPerDay', 'otHours', 'otUnit', 'otHoursDay', 'otDays', 'otCutsPerHour'];
 function bridgeSteps(B, T) {
+  if (isCafe(B)) return bridgeStepsCafe(B, T);
   const steps = [
     ['Κουρέματα & υπερωρίες', s => s.barbers.forEach(b => { const t = T.barbers.find(x => x.name === b.name); if (t) OT_KEYS.forEach(k => { b[k] = t[k]; }); })],
     ['Τιμές', s => { s.services = clone(T.services); s.barbers.forEach(b => { const t = T.barbers.find(x => x.name === b.name); if (t) b.ticket = t.ticket; }); }],
@@ -911,19 +1078,19 @@ function fBridge() {
 function rOverview() {
   return `
   <h2>Πόσο βγάζει το μαγαζί</h2>
-  <p class="lead">Κουρείο 75 τ.μ. στην Καλαμάτα με ${S.barbers.length} θέσεις και γωνιά καφέ. Άλλαξε πόσους κουρεύει ο καθένας και τις τιμές· όλα τα νούμερα ενημερώνονται αμέσως. Τα ποσά είναι μηνιαία, χωρίς ΦΠΑ, εκτός αν γράφει «με ΦΠΑ». Πέρνα το δάχτυλο ή το ποντίκι πάνω από τα διαγράμματα για λεπτομέρειες.</p>
+  <p class="lead">${isCafe(S) ? `Καφέ take-away 50 τ.μ. στο Νέο Ηράκλειο (αγορά υπάρχουσας επιχείρησης). Άλλαξε παραγγελίες και τιμές· όλα τα νούμερα ενημερώνονται αμέσως. Τα ποσά είναι μηνιαία, χωρίς ΦΠΑ, εκτός αν γράφει «με ΦΠΑ».` : `Κουρείο 75 τ.μ. στην Καλαμάτα με ${S.barbers.length} θέσεις και γωνιά καφέ. Άλλαξε πόσους κουρεύει ο καθένας και τις τιμές· όλα τα νούμερα ενημερώνονται αμέσως. Τα ποσά είναι μηνιαία, χωρίς ΦΠΑ, εκτός αν γράφει «με ΦΠΑ». Πέρνα το δάχτυλο ή το ποντίκι πάνω από τα διαγράμματα για λεπτομέρειες.`}</p>
   <div class="kgrid" id="ov-kpis"></div>
   <div class="grid g2">
     <div class="card">
       <h3>Γρήγορες ρυθμίσεις</h3>
-      ${S.barbers.map((b, i) => `
+      ${isCafe(S) ? `<div class="slider"><div class="top"><span>Παραγγελίες την ημέρα</span><span><b data-show="sales.ordersPerDay">${S.sales.ordersPerDay}</b> <span class="small">παραγγ./ημέρα</span></span></div>
+          <input type="range" min="0" max="500" step="5" data-k="sales.ordersPerDay" data-t="n" value="${S.sales.ordersPerDay}"></div>
+        <div class="fields">${field('sales.itemsPerOrder', 'Τεμάχια ανά παραγγελία', { step: 0.05 })}${field('settings.daysPerMonth', 'Ημέρες λειτουργίας/μήνα', { step: 1 })}</div>
+        <div class="fields" style="margin-top:6px">${S.menu.map((x, i) => field(`menu.${i}.price`, esc(x.name), { suf: '€', step: 0.1 })).join('')}</div>` : S.barbers.map((b, i) => `
         <div class="slider">
           <div class="top"><span>${esc(b.name)} <span class="mode">${MODES[b.mode].label}</span></span><span><b data-show="barbers.${i}.cutsPerDay">${b.cutsPerDay}</b> <span class="small">κουρ./ημέρα</span></span></div>
           <input type="range" min="0" max="24" step="1" data-k="barbers.${i}.cutsPerDay" data-t="n" value="${b.cutsPerDay}">
-        </div>`).join('')}
-      <div class="fields" style="margin-top:6px">
-        ${S.services.map((x, i) => field(`services.${i}.price`, esc(x.name), { suf: '€', step: 0.5 })).join('')}
-      </div>
+        </div>`).join('') + `<div class="fields" style="margin-top:6px">${S.services.map((x, i) => field(`services.${i}.price`, esc(x.name), { suf: '€', step: 0.5 })).join('')}</div>`}
       <div class="note" id="ov-ticket"></div>
     </div>
     <div class="card"><h3>Μηνιαίος λογαριασμός (πλήρης λειτουργία, 1ο έτος)</h3><div id="ov-pl"></div></div>
@@ -940,19 +1107,19 @@ function rOverview() {
   </div>
   <div class="grid g2 sec">
     <div class="card"><h3>Πού πάνε τα έσοδα κάθε μήνα</h3><div id="ov-donut"></div></div>
-    <div class="card"><h3>Πού πάει κάθε κούρεμα</h3><div id="ov-cut"></div></div>
+    <div class="card"><h3>${isCafe(S) ? 'Πού πάει κάθε παραγγελία' : 'Πού πάει κάθε κούρεμα'}</h3><div id="ov-cut"></div></div>
   </div>
-  <div class="card sec"><div class="cathd" style="flex-wrap:wrap;gap:8px"><h3 style="margin:0">Τι φέρνει κάθε εργαζόμενος</h3>${periodSeg()}</div><div id="ov-workers" style="margin-top:10px"></div></div>
-  <div class="card sec">
+  ${isCafe(S) ? '' : `<div class="card sec"><div class="cathd" style="flex-wrap:wrap;gap:8px"><h3 style="margin:0">Τι φέρνει κάθε εργαζόμενος</h3>${periodSeg()}</div><div id="ov-workers" style="margin-top:10px"></div></div>`}
+  ${isCafe(S) ? '' : `<div class="card sec">
     <h3>Μισθός, ποσοστό ή ενοικίαση;</h3>
     <p class="small" style="margin-top:-6px">Καθαρό κέρδος/μήνα αν όλοι οι κουρείς (εκτός εταίρων) δούλευαν με το ίδιο μοντέλο, ανάλογα με το πόσα κουρέματα κάνουν.</p>
     <div class="models" id="ov-models"></div>
     <div id="ov-mline" style="margin-top:12px"></div>
     <div class="note" id="ov-models-note"></div>
-  </div>
+  </div>`}
   <div class="card sec">
-    <h3>Καθαρό κέρδος/μήνα ανά κουρέματα και τιμή</h3>
-    <p class="small" style="margin-top:-6px">Μετά από φόρο. Κάθε κουρέας κάνει τα κουρέματα της γραμμής, με τη μέση απόδειξη της στήλης (με ΦΠΑ).</p>
+    <h3>Καθαρό κέρδος/μήνα ανά ${isCafe(S) ? 'παραγγελίες' : 'κουρέματα'} και τιμή</h3>
+    <p class="small" style="margin-top:-6px">${isCafe(S) ? 'Μετά από φόρο. Παραγγελίες την ημέρα (γραμμή) με μέση απόδειξη της στήλης (με ΦΠΑ).' : 'Μετά από φόρο. Κάθε κουρέας κάνει τα κουρέματα της γραμμής, με τη μέση απόδειξη της στήλης (με ΦΠΑ).'}</p>
     <div class="scroll" id="ov-heat"></div>
   </div>`;
 }
@@ -960,20 +1127,32 @@ function rOverview() {
 function fOverview(R) {
   const C = capexTotals(S, R), CF = cashflow(S, C), BE = breakeven(S);
   const st = S.settings, lp = CF.loan;
-  const own = C.net;
+  const own = C.net, cafe = isCafe(S);
   setHTML('ov-kpis', [
-    ['Τζίρος/μήνα (με ΦΠΑ)', eur(R.grossReceipts + R.rev.chairRent * (1 + st.vatServices / 100)), `${num(R.clients)} πελάτες`],
+    ['Τζίρος/μήνα (με ΦΠΑ)', eur(R.grossReceipts + (R.rev.chairRent || 0) * (1 + (st.vatServices || 0) / 100)), `${num(R.clients)} ${cafe ? 'παραγγελίες' : 'πελάτες'}`],
     ['Κέρδος προ φόρων', `<span class="${sgn(R.preTax)}">${eur(R.preTax)}</span>`, `${eur(R.preTax * 12)} / έτος`],
     ['Καθαρό μετά φόρων', `<span class="${sgn(R.net)}">${eur(R.net)}</span>`, `${eur(R.net * 12)} / έτος`],
     ['Κεφάλαιο εταίρων', eur(C.net), (C.loan || C.grant) ? `σύνολο ${eur(C.total)}${C.loan ? ` − δάνειο ${eur(C.loan)}` : ''}${C.grant ? ` − επιδότηση ${eur(C.grant)}` : ''}` : `έξοδα ${eur(C.spend)} + αποθεματικό ${eur(C.reserve)}`],
     ['Απόσβεση', CF.payback ? `${CF.payback} μήνες` : `> ${CF.H} μήνες`, CF.payback ? `με σταδιακή εκκίνηση ${st.rampMonths} μηνών` : 'δεν αποσβένεται στο διάστημα'],
-    ['Νεκρό σημείο', BE.cpd != null ? `${num1(BE.cpd)} κουρ./ημέρα` : '—', BE.cpd != null ? `ανά κουρέα (σήμερα ${num1(BE.avg)})` : 'δεν υπάρχουν μισθωτοί/ποσοστό']
+    ['Νεκρό σημείο', BE.cpd != null ? `${num1(BE.cpd)} ${BE.unit}` : '—', BE.cpd != null ? (cafe ? `σήμερα ${num(BE.avg)}` : `ανά κουρέα (σήμερα ${num1(BE.avg)})`) : 'δεν υπάρχουν μισθωτοί/ποσοστό']
   ].map(([l, v, e]) => `<div class="card kpi"><span>${l}</span><b>${v}</b><em>${e}</em></div>`).join(''));
 
-  setHTML('ov-ticket', `Μέση απόδειξη <b>${eur2(R.avgTicket)}</b> με ΦΠΑ (${eur2(R.avgTicket / (1 + st.vatServices / 100))} καθαρά), με βάση το μείγμα υπηρεσιών. Αλλάζεις μείγμα στην καρτέλα «Κουρείς & τιμές».`);
+  if (cafe) setHTML('ov-ticket', `Μέση παραγγελία <b>${eur2(R.avgTicket)}</b> με ΦΠΑ (${eur2(R.avgTicket / (1 + st.vatCafe / 100))} καθαρά) · κόστος υλικών ${num1(R.cogsPct * 100)}% της τιμής. Αλλάζεις μενού στην καρτέλα «Μενού & πωλήσεις».`);
+  else setHTML('ov-ticket', `Μέση απόδειξη <b>${eur2(R.avgTicket)}</b> με ΦΠΑ (${eur2(R.avgTicket / (1 + st.vatServices / 100))} καθαρά), με βάση το μείγμα υπηρεσιών. Αλλάζεις μείγμα στην καρτέλα «Κουρείς & τιμές».`);
 
   const r = R.rev, c = R.cost;
-  setHTML('ov-pl',
+  if (cafe) setHTML('ov-pl',
+    row('Πωλήσεις (χωρίς ΦΠΑ)', eur(R.revenue), 'sub') +
+    row('Προσωπικό (με εισφορές)', '−' + eur(c.staff)) +
+    row(`Πρώτες ύλες & συσκευασίες (${num1(R.cogsPct * 100)}%)`, '−' + eur(c.cogs)) +
+    row('Πάγια (ενοίκιο, ρεύμα, λογιστής…)', '−' + eur(c.fixed)) +
+    row('Προμήθειες καρτών', '−' + eur(c.card)) +
+    row('Κέρδος προ φόρων', `<span class="${sgn(R.preTax)}">${eur(R.preTax)}</span>`, 'sub') +
+    row(`Φόρος εταιρείας ${st.corpTax}%`, '−' + eur(R.tax)) +
+    row('Καθαρό κέρδος', `<span class="${sgn(R.net)}">${eur(R.net)}</span>`, 'tot') +
+    (lp.pay ? row(`Δόση δανείου (${num(lp.L)} € / ${num1(lp.N / 12)} έτη)`, '−' + eur(lp.pay)) + row('Μένει μετά τη δόση', `<span class="${sgn(R.net - lp.pay)}">${eur(R.net - lp.pay)}</span>`, 'sub') : '') +
+    row(`Προς διανομή (μετά φόρο μερισμάτων ${st.dividendTax}%)`, eur(Math.max(0, R.net - lp.pay) * (1 - st.dividendTax / 100))));
+  else setHTML('ov-pl',
     row('Κουρέματα (μισθωτοί, ποσοστό, εταίροι)', eur(r.services)) +
     (r.chairRent ? row('Ενοίκια θέσεων', eur(r.chairRent)) : '') +
     (r.coffee ? row('Πωλήσεις καφέ', eur(r.coffee)) : '') +
@@ -1015,7 +1194,7 @@ function fOverview(R) {
   }));
   const Y = CF.years;
   setHTML('ov-years', `<table class="tbl yrs"><tr><th></th>${Y.map((_, i) => `<th>${i + 1}ο έτος</th>`).join('')}</tr>
-    <tr><td>Πελάτες</td>${Y.map(y => `<td>${num(y.clients)}</td>`).join('')}</tr>
+    <tr><td>${cafe ? 'Παραγγελίες' : 'Πελάτες'}</td>${Y.map(y => `<td>${num(y.clients)}</td>`).join('')}</tr>
     <tr><td>Τζίρος (με ΦΠΑ)</td>${Y.map(y => `<td>${eur(y.gross)}</td>`).join('')}</tr>
     <tr><td>Έσοδα</td>${Y.map(y => `<td>${eur(y.rev)}</td>`).join('')}</tr>
     <tr><td>Έξοδα</td>${Y.map(y => `<td>−${eur(y.costs)}</td>`).join('')}</tr>
@@ -1027,7 +1206,14 @@ function fOverview(R) {
     <tr><td>Ταμείο τέλος έτους</td>${Y.map(y => `<td class="${sgn(y.end)}">${eur(y.end)}</td>`).join('')}</tr></table>`);
 
   // donut: where revenue goes
-  const dParts = [
+  const dParts = cafe ? [
+    { name: 'Προσωπικό', value: c.staff, color: SER[0] },
+    { name: 'Πρώτες ύλες & συσκευασίες', value: c.cogs, color: SER[3] },
+    { name: 'Πάγια', value: c.fixed, color: SER[1] },
+    { name: 'Προμήθειες καρτών', value: c.card, color: SER[7] },
+    { name: 'Φόρος', value: R.tax, color: SER[6] },
+    { name: R.net >= 0 ? 'Καθαρό κέρδος' : 'Ζημιά', value: Math.max(0, R.net), color: SER[5] }
+  ].filter(p => p.value > 0.5) : [
     { name: 'Κουρείς (μισθοί/ποσοστά)', value: c.staff, color: SER[0] },
     { name: 'Πάγια', value: c.fixed, color: SER[1] },
     { name: 'Μπαρίστα', value: c.barista, color: SER[2] },
@@ -1039,10 +1225,18 @@ function fOverview(R) {
   ].filter(p => p.value > 0.5);
   setHTML('ov-donut', `<p class="small" style="margin-top:-6px">Από τα ${eur(R.revenue)} εσόδων του μήνα (χωρίς ΦΠΑ).</p>` + donutBlock(dParts, { big: eur(R.revenue), small: 'έσοδα/μήνα' }));
 
-  setHTML('ov-workers', workersChart(R, true));
+  if ($('ov-workers')) setHTML('ov-workers', workersChart(R, true));
   fBridge();
-  // per-cut
-  if (R.shopCuts > 0) {
+  // per-cut / per-order
+  if (cafe) {
+    const n = R.clients || 1, g = R.grossReceipts / n, vat = g - R.revenue / n;
+    const parts = [['ΦΠΑ', vat, SER[7]], ['Πρώτες ύλες & συσκευασίες', c.cogs / n, SER[3]], ['Προσωπικό', c.staff / n, SER[0]], ['Ενοίκιο & πάγια', c.fixed / n, SER[1]],
+      ['POS', c.card / n, SER[4]], ['Φόρος', R.tax / n, SER[6]], [R.net >= 0 ? 'Κέρδος' : 'Ζημιά', R.net / n, SER[5]]];
+    const tot = parts.reduce((a, p) => a + Math.max(0, p[1]), 0) || 1;
+    setHTML('ov-cut', `<p class="small" style="margin-top:-6px">Μέση παραγγελία ${eur2(g)} με ΦΠΑ.</p>
+      <div class="stack">${parts.filter(p => p[1] > 0).map(p => `<div style="width:${p[1] / tot * 100}%;background:${p[2]};border-right:2px solid var(--surface)" data-tip="${attr(tipHTML(p[0], [[p[2], 'Ανά παραγγελία', eur2(p[1])], ['', 'Μερίδιο', num(p[1] / g * 100) + '%']]))}"></div>`).join('')}</div>
+      <div class="legend">${parts.map(p => `<div class="row"><span><i class="dot" style="background:${p[2]}"></i>${p[0]}</span><span class="${p[1] < 0 ? 'neg' : ''}">${eur2(p[1])}</span></div>`).join('')}</div>`);
+  } else if (R.shopCuts > 0) {
     const n = R.shopCuts, g = R.shopGross / n;
     const vat = (R.shopGross - R.shopNet) / n;
     const staff = c.staff / n, cons = c.consum / n;
@@ -1059,6 +1253,7 @@ function fOverview(R) {
       <div class="legend">${parts.map(p => `<div class="row"><span><i class="dot" style="background:${p[2]}"></i>${p[0]}</span><span class="${p[1] < 0 ? 'neg' : ''}">${eur2(p[1])}</span></div>`).join('')}</div>`);
   } else setHTML('ov-cut', '<p class="small">Όλοι οι κουρείς είναι σε ενοικίαση θέσης — το μαγαζί δεν εισπράττει κουρέματα.</p>');
 
+  if (!cafe) {
   // models
   const ms = ['salary', 'commission', 'rent'].map(m => ({ m, R: compute(S, { mode: m }) }));
   const best = ms.reduce((a, b) => b.R.net > a.R.net ? b : a);
@@ -1085,17 +1280,21 @@ function fOverview(R) {
     (cross ? `<b>Οι μισθωτοί συμφέρουν από ~${num1(cross)} κουρέματα/ημέρα και πάνω</b>· κάτω από αυτό συμφέρει το ποσοστό. ` : '') +
     `Μισθωτοί = μεγαλύτερο κέρδος όταν κουρεύουν πολύ, αλλά σταθερό κόστος όταν το μαγαζί είναι άδειο. Ενοικίαση = μικρό αλλά σίγουρο έσοδο.`);
 
+  }
   // heat
-  const rows = [6, 8, 10, 12, 14, 16], cols = [12, 14, 16, 18, 20, 22];
+  const unitH = cafe ? 'παραγγ./ημέρα' : 'κουρ./ημέρα';
+  const base0 = cafe ? Math.max(40, Math.round(BE.avg / 20) * 20) : 0;
+  const rows = cafe ? [-80, -40, 0, 40, 80, 120].map(d => Math.max(0, base0 + d)) : [6, 8, 10, 12, 14, 16];
+  const cols = cafe ? [-1, -0.5, 0, 0.5, 1, 1.5].map(d => Math.round((R.avgTicket + d) * 10) / 10) : [12, 14, 16, 18, 20, 22];
   const hv = rows.map(rr => cols.map(t => compute(S, { cpd: rr, ticket: t }).net));
   const mx = Math.max(1, ...hv.flat().map(Math.abs));
   const curR = rows.reduce((a, b) => Math.abs(b - BE.avg) < Math.abs(a - BE.avg) ? b : a);
   const curC = cols.reduce((a, b) => Math.abs(b - R.avgTicket) < Math.abs(a - R.avgTicket) ? b : a);
-  setHTML('ov-heat', `<table class="heat"><tr><th>κουρ./ημέρα</th>${cols.map(cc => `<th>${cc} €</th>`).join('')}</tr>${rows.map((rr, i) => `<tr><th>${rr}</th>${cols.map((cc, j) => {
+  setHTML('ov-heat', `<table class="heat"><tr><th>${unitH}</th>${cols.map(cc => `<th>${num1(cc)} €</th>`).join('')}</tr>${rows.map((rr, i) => `<tr><th>${rr}</th>${cols.map((cc, j) => {
     const v = hv[i][j], a = Math.min(1, Math.abs(v) / mx) * 0.85 + 0.08;
     const bg = v >= 0 ? `color-mix(in srgb,var(--pos) ${a * 100}%,var(--surface))` : `color-mix(in srgb,var(--neg) ${a * 100}%,var(--surface))`;
     const fg = a > 0.5 ? '#fff' : 'var(--ink)';
-    return `<td style="background:${bg};color:${fg}" class="${rr === curR && cc === curC ? 'cur' : ''}" data-tip="${attr(tipHTML(`${rr} κουρ./ημέρα × ${cc} €`, [['', 'Καθαρό/μήνα', eur(v)], ['', 'Καθαρό/έτος', eur(v * 12)]]))}">${kEur(v)}</td>`;
+    return `<td style="background:${bg};color:${fg}" class="${rr === curR && cc === curC ? 'cur' : ''}" data-tip="${attr(tipHTML(`${rr} ${unitH} × ${cc} €`, [['', 'Καθαρό/μήνα', eur(v)], ['', 'Καθαρό/έτος', eur(v * 12)]]))}">${kEur(v)}</td>`;
   }).join('')}</tr>`).join('')}</table><p class="small">Περίγραμμα = πιο κοντά στα σημερινά νούμερα.</p>`);
 }
 
@@ -1127,14 +1326,14 @@ function rMinimums() {
     <div id="mn-now" class="note"></div>
   </div>
   <div class="grid g3 sec" id="mn-cards"></div>
-  <div class="card sec"><h3>Καθαρό κέρδος ανάλογα με τα κουρέματα</h3><p class="small" style="margin-top:-6px">Αν κάθε κουρέας κάνει τόσα κουρέματα την ημέρα. Κάτω από τη γραμμή του μηδέν το μαγαζί μπαίνει μέσα.</p><div id="mn-ch-cuts"></div></div>
+  <div class="card sec"><h3>Καθαρό κέρδος ανάλογα με ${isCafe(S) ? 'τις παραγγελίες' : 'τα κουρέματα'}</h3><p class="small" style="margin-top:-6px">${isCafe(S) ? 'Παραγγελίες την ημέρα.' : 'Αν κάθε κουρέας κάνει τόσα κουρέματα την ημέρα.'} Κάτω από τη γραμμή του μηδέν το μαγαζί μπαίνει μέσα.</p><div id="mn-ch-cuts"></div></div>
   <div class="grid g2 sec">
-    <div class="card"><h3>Καθαρό κέρδος ανάλογα με την τιμή</h3><p class="small" style="margin-top:-6px">Μέση απόδειξη κουρέματος με ΦΠΑ, με τα σημερινά κουρέματα.</p><div id="mn-ch-price"></div></div>
+    <div class="card"><h3>Καθαρό κέρδος ανάλογα με την τιμή</h3><p class="small" style="margin-top:-6px">${isCafe(S) ? 'Μέση παραγγελία με ΦΠΑ, με τις σημερινές παραγγελίες.' : 'Μέση απόδειξη κουρέματος με ΦΠΑ, με τα σημερινά κουρέματα.'}</p><div id="mn-ch-price"></div></div>
     <div class="card" id="mn-coffee-card"><h3>Καθαρό κέρδος ανάλογα με τον καφέ</h3><p class="small" style="margin-top:-6px">Καφέδες που πωλούνται την ημέρα.</p><div id="mn-ch-coffee"></div></div>
   </div>
   <div class="grid g2 sec">
-    <div class="card"><h3>Ελάχιστες τιμές</h3><p class="small" style="margin-top:-6px">Αν ανέβουν όλες οι τιμές με την ίδια αναλογία και τα κουρέματα μείνουν ίδια.</p><div id="mn-prices"></div></div>
-    <div class="card"><h3>Κάθε κουρέας για να βγάζει το κόστος του</h3><p class="small" style="margin-top:-6px">Κουρέματα την ημέρα για να καλύπτει τον μισθό/ποσοστό του, τα αναλώσιμα και το POS. Πάνω από αυτό αρχίζει να πληρώνει ενοίκιο, μπαρίστα και πάγια.</p><div id="mn-barbers"></div></div>
+    <div class="card"><h3>Ελάχιστες τιμές</h3><p class="small" style="margin-top:-6px">Αν ανέβουν όλες οι τιμές με την ίδια αναλογία και οι πωλήσεις μείνουν ίδιες.</p><div id="mn-prices"></div></div>
+    <div class="card"><h3>${isCafe(S) ? 'Κάθε υπάλληλος για να βγαίνει' : 'Κάθε κουρέας για να βγάζει το κόστος του'}</h3><p class="small" style="margin-top:-6px">${isCafe(S) ? 'Πόσες παραγγελίες την ημέρα χρειάζονται μόνο για να πληρωθεί ο μισθός του (από το μικτό κέρδος των παραγγελιών).' : 'Κουρέματα την ημέρα για να καλύπτει τον μισθό/ποσοστό του, τα αναλώσιμα και το POS. Πάνω από αυτό αρχίζει να πληρώνει ενοίκιο, μπαρίστα και πάγια.'}</p><div id="mn-barbers"></div></div>
   </div>`;
 }
 function minCard(title, min, now, fmt, opts = {}) {
@@ -1235,6 +1434,122 @@ function fMinimums(R) {
     const now = +b.cutsPerDay || 0;
     return row(`${esc(b.name)} <span class="small">${MODES[b.mode].label}</span>`, m == null ? '<span class="neg">δεν βγαίνει</span>' : `<b class="${now >= m ? 'pos' : 'neg'}">${num1(m)}</b> <span class="small">κουρ./ημέρα · σήμερα ${num1(now)}</span>`);
   }).join(''));
+}
+
+/* ---------- Coffeeshop: Μενού & πωλήσεις ---------- */
+function rMenu() {
+  return `
+  <h2>Μενού & πωλήσεις</h2>
+  <p class="lead">Πόσες παραγγελίες γίνονται, τι αγοράζουν και τι κοστίζει κάθε προϊόν σε υλικά (καφές, γάλα, ποτήρι, καπάκι, σνακ). Το «% πωλήσεων» λέει πόσο συχνά πουλιέται κάθε προϊόν.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Πωλήσεις</h3>
+      <div class="slider"><div class="top"><span class="small">Παραγγελίες την ημέρα</span><b data-show="sales.ordersPerDay">${S.sales.ordersPerDay}</b></div>
+        <input type="range" min="0" max="500" step="5" data-k="sales.ordersPerDay" data-t="n" value="${S.sales.ordersPerDay}"></div>
+      <div class="fields">
+        ${field('sales.ordersPerDay', 'Παραγγελίες/ημέρα', { step: 5 })}
+        ${field('sales.itemsPerOrder', 'Τεμάχια ανά παραγγελία', { step: 0.05, help: 'π.χ. 1,25 = 1 στις 4 παραγγελίες έχει 2ο προϊόν' })}
+        ${field('settings.daysPerMonth', 'Ημέρες λειτουργίας/μήνα', { step: 1, help: '30 = κάθε μέρα' })}
+        ${field('sales.openHours', 'Ώρες λειτουργίας/ημέρα', { suf: 'ώρες', step: 0.5 })}
+      </div>
+      <div id="mnu-sum" style="margin-top:10px"></div>
+    </div>
+    <div class="card">
+      <h3>Μενού (τιμές με ΦΠΑ)</h3>
+      <div class="mhead"><span>Τιμή</span><span>% πωλήσεων</span><span>Κόστος υλικών</span></div>
+      ${S.menu.map((x, i) => `<div class="mitem">
+        <div class="mname">${textIn(`menu.${i}.name`)}<button class="x" data-act="delMenu" data-i="${i}" title="Διαγραφή">×</button></div>
+        <div class="mvals"><div class="inp"><input type="number" step="0.1" data-k="menu.${i}.price" data-t="n" value="${x.price}"><i>€</i></div>
+        <div class="inp"><input type="number" step="1" data-k="menu.${i}.mix" data-t="n" value="${x.mix}"><i>%</i></div>
+        <div class="inp"><input type="number" step="1" data-k="menu.${i}.costPct" data-t="n" value="${x.costPct}"><i>%</i></div></div>
+      </div>`).join('')}
+      <button class="btn sec2" style="margin-top:10px" data-act="addMenu">+ Προϊόν</button>
+      <p class="small">Κόστος υλικών = % της τιμής χωρίς ΦΠΑ. Καφές συνήθως 15–25%, σνακ 40–55%, αναψυκτικά 40–50%.</p>
+    </div>
+  </div>
+  <div class="card sec"><div class="cathd" style="flex-wrap:wrap;gap:8px"><h3 style="margin:0">Τι φέρνει κάθε προϊόν</h3>${periodSeg()}</div><div id="mnu-chart" style="margin-top:10px"></div></div>`;
+}
+function fMenu(R) {
+  const st = S.settings, vat = 1 + st.vatCafe / 100;
+  const perOrderNet = R.avgTicket / vat, gm = perOrderNet * (1 - R.cogsPct);
+  setHTML('mnu-sum', row('Μέση τιμή προϊόντος', eur2(R.avgItem)) + row('Μέση παραγγελία (με ΦΠΑ)', eur2(R.avgTicket)) +
+    row('Κόστος υλικών', `${num1(R.cogsPct * 100)}%`) + row('Μικτό κέρδος ανά παραγγελία', eur2(gm), 'sub') +
+    row('Παραγγελίες/μήνα', num(R.clients)) + row('Παραγγελίες ανά ώρα λειτουργίας', num1((+S.sales.ordersPerDay || 0) / (+S.sales.openHours || 1))));
+  const pf = periodF(), pl = PERIODS[PERIOD][1];
+  const e2 = v => PERIOD === 'day' ? eur2(v * pf) : eur(v * pf), n2 = v => PERIOD === 'day' ? num1(v * pf) : num(v * pf);
+  const tot = S.menu.reduce((a, x) => a + (+x.mix || 0), 0) || 1;
+  const rows = S.menu.map(x => { const units = R.items * (+x.mix || 0) / tot, rev = units * (+x.price || 0) / vat; return { name: x.name, units, rev, gp: rev * (1 - (+x.costPct || 0) / 100) }; });
+  const mx = Math.max(1, ...rows.map(r => r.rev));
+  setHTML('mnu-chart', legend([['var(--c1)', `Έσοδα χωρίς ΦΠΑ ${pl}`, 'sq'], ['var(--c3)', `Μικτό κέρδος ${pl}`, 'sq']]) + rows.map(r => `<div class="hb" data-tip="${attr(tipHTML(esc(r.name), [['', 'Τεμάχια', n2(r.units)], ['var(--c1)', 'Έσοδα', e2(r.rev)], ['var(--c3)', 'Μικτό κέρδος', e2(r.gp)]]))}">
+    <div class="nm"><span>${esc(r.name)}</span><span class="small">${n2(r.units)} τεμ. ${pl}</span></div>
+    <div class="tr2"><div class="bar" style="width:${r.rev / mx * 75}%;background:var(--c1)"></div><span class="v">${e2(r.rev)}</span></div>
+    <div class="tr2"><div class="bar" style="width:${Math.max(0, r.gp) / mx * 75}%;background:var(--c3)"></div><span class="v">${e2(r.gp)}</span></div></div>`).join(''));
+}
+
+/* ---------- Coffeeshop: Προσωπικό ---------- */
+function rStaff() {
+  return `
+  <h2>Προσωπικό</h2>
+  <p class="lead">Μπαρίστα και βοηθοί. Ο μισθός είναι μικτός· το κόστος για το μαγαζί μετράει 14 μισθούς και εργοδοτικές εισφορές. Αν δουλεύει και κάποιος εταίρος χωρίς μισθό, μην τον βάλετε εδώ.</p>
+  <div class="grid g3">
+    ${S.staff.map((p, i) => `<div class="card">
+      <div class="hd" style="display:flex;gap:8px;align-items:center">${textIn(`staff.${i}.name`, 'name')}<button class="x" data-act="delStaff" data-i="${i}" title="Αφαίρεση">×</button></div>
+      <div class="fields" style="margin-top:8px">${field(`staff.${i}.salary`, 'Μικτός μισθός', { suf: '€/μήνα', step: 10, help: 'Κατώτατος 920 €' })}${field(`staff.${i}.fte`, 'Απασχόληση', { suf: '%', step: 5, help: '100 = πλήρης (40 ώρες)' })}</div>
+      <div id="stf-${i}" style="margin-top:8px"></div>
+    </div>`).join('')}
+    <button class="card" data-act="addStaff" style="border-style:dashed;color:var(--muted);min-height:120px;font-weight:600">+ Υπάλληλος</button>
+  </div>
+  <div class="card sec"><h3>Κάλυψη ωραρίου</h3><div id="stf-cov"></div></div>`;
+}
+function fStaff(R) {
+  R.staff.forEach((p, i) => setHTML(`stf-${i}`, row('Κόστος για το μαγαζί', eur(p.cost) + '/μήνα') + row('Μικτά (μέσος όρος μήνα)', eur(p.earn)) + row('Ώρες/εβδομάδα', num(40 * (+S.staff[i].fte || 0) / 100))));
+  const staffH = S.staff.reduce((a, p) => a + 40 * (+p.fte || 0) / 100, 0);
+  const openWeekH = (+S.sales.openHours || 0) * S.settings.daysPerMonth * 12 / 52;
+  const cover = openWeekH ? staffH / openWeekH : 0;
+  setHTML('stf-cov', row('Ώρες λειτουργίας/εβδομάδα', num(openWeekH)) + row('Ώρες προσωπικού/εβδομάδα', num(staffH)) +
+    row('Άτομα στο μαγαζί κατά μέσο όρο', `<b class="${cover >= 1 ? 'pos' : 'neg'}">${num1(cover)}</b>`, 'sub') + row('Κόστος προσωπικού/μήνα', eur(R.cost.staff), 'tot') +
+    `<p class="small">${cover < 1 ? 'Δεν φτάνουν οι ώρες για να υπάρχει πάντα κάποιος στο μαγαζί — προσθέστε άτομο ή μερική απασχόληση, ή μειώστε το ωράριο.' : cover < 1.5 ? 'Υπάρχει περίπου ένα άτομο τη φορά. Στις ώρες αιχμής (πρωί) μάλλον χρειάζονται δύο.' : 'Υπάρχουν συχνά δύο άτομα μαζί — καλό για τις ώρες αιχμής.'} Υπόθεση: 40 ώρες/εβδομάδα για πλήρη απασχόληση.</p>`);
+}
+
+/* ---------- Coffeeshop: Ελάχιστα ---------- */
+function fMinimumsCafe(R) {
+  const goal = +S.settings.goalNet || 0, g = st => compute(st).net - goal;
+  setHTML('mn-now', `Σήμερα το καθαρό είναι <b class="${sgn(R.net)}">${eur(R.net)}/μήνα</b>${goal ? ` — στόχος ${eur(goal)}` : ''}. ` +
+    (R.net >= goal ? 'Είστε πάνω από το όριο· οι κάρτες δείχνουν πόσο περιθώριο έχετε.' : '<b class="neg">Είστε κάτω από το όριο· οι κάρτες δείχνουν τι πρέπει να αλλάξει.</b>'));
+  const opd = +S.sales.ordersPerDay || 0;
+  const minO = solveMin(x => g(withS(s => { s.sales.ordersPerDay = x; })), 0, 3000);
+  const scaleS = f => withS(s => s.menu.forEach(x => { x.price = (+x.price || 0) * f; }));
+  const fMin = solveMin(f => g(scaleS(f)), 0, 5);
+  const cards = [
+    minCard('Παραγγελίες/ημέρα', minO, opd, v => num(v), { note: `${num1(minO == null ? 0 : minO / (+S.sales.openHours || 1))} την ώρα λειτουργίας` }),
+    minCard('Παραγγελίες/μήνα', minO == null ? null : minO * S.settings.daysPerMonth, R.clients, v => num(v)),
+    minCard('Τζίρος/μήνα (με ΦΠΑ)', minO == null ? null : compute(withS(s => { s.sales.ordersPerDay = minO; })).grossReceipts, R.grossReceipts, v => eur(v)),
+    minCard('Μέση παραγγελία (με ΦΠΑ)', fMin == null ? null : R.avgTicket * fMin, R.avgTicket, v => eur2(v))
+  ];
+  const ri = S.fixed.findIndex(x => /ενοίκ/i.test(x.name));
+  if (ri >= 0) cards.push(minCard('Μέγιστο ενοίκιο που αντέχει', solveMax(x => g(withS(s => { s.fixed[ri].amount = x; })), 0, 20000), +S.fixed[ri].amount || 0, v => eur(v), { max: true }));
+  const cogs = solveMax(x => g(withS(s => s.menu.forEach(m => { m.costPct = (+m.costPct || 0) * x; }))), 0, 5);
+  cards.push(minCard('Μέγιστο κόστος υλικών', cogs == null ? null : R.cogsPct * cogs * 100, R.cogsPct * 100, v => num1(v) + '%', { max: true, note: 'αν ακριβύνουν καφές/γάλα/συσκευασίες' }));
+  setHTML('mn-cards', cards.join(''));
+  // διαγράμματα
+  const refs = goal ? [{ y: goal, color: 'var(--accent)' }] : [];
+  const sens = (id, xs, mk, opts) => {
+    const vals = xs.map(x => compute(mk(x)).net), w = cw(id), n = xs.length, step = opts.tickEvery || (w < 600 ? 4 : 2);
+    const ticks = xs.map((_, i) => i).filter(i => i % step === 0 || i === n - 1), at = v => (v - xs[0]) / (xs[n - 1] - xs[0]) * (n - 1);
+    setHTML(id, lineChart({ w, n, label: opts.label, series: [{ name: 'Καθαρό/μήνα', color: 'var(--c1)', values: vals }], refs, ticks, xLabel: i => opts.fmtX(xs[i]),
+      vline: opts.now >= xs[0] && opts.now <= xs[n - 1] ? { at: at(opts.now), label: `σήμερα ${opts.fmtX(opts.now)}` } : null,
+      marks: opts.min != null && opts.min > xs[0] && opts.min <= xs[n - 1] ? [{ i: at(opts.min), v: goal, label: `όριο ${opts.fmtX(opts.min)}` }] : [],
+      tip: i => tipHTML(opts.tipTitle(xs[i]), [['var(--c1)', 'Καθαρό/μήνα', eur(vals[i])], ['', 'Καθαρό/έτος', eur(vals[i] * 12)]]) }));
+  };
+  const top = Math.max(300, Math.ceil(opd * 1.6 / 20) * 20), ox = []; for (let x = 0; x <= top; x += top / 20) ox.push(Math.round(x));
+  sens('mn-ch-cuts', ox, x => withS(s => { s.sales.ordersPerDay = x; }), { label: 'Καθαρό ανά παραγγελίες/ημέρα', min: minO, now: opd, fmtX: v => num(v), tipTitle: x => `${x} παραγγελίες/ημέρα` });
+  const at0 = R.avgTicket || 1, px = []; for (let x = 1; x <= 8; x += 0.5) px.push(x);
+  sens('mn-ch-price', px, x => scaleS(x / at0), { label: 'Καθαρό ανά μέση παραγγελία', min: fMin == null ? null : at0 * fMin, now: at0, fmtX: v => num1(v) + '€', tipTitle: x => `Μέση παραγγελία ${num1(x)} €` });
+  $('mn-coffee-card').style.display = 'none';
+  setHTML('mn-prices', fMin == null ? '<p class="small neg">Ακόμα και με 5πλάσιες τιμές δεν βγαίνει.</p>' :
+    `<table class="tbl"><tr><th>Προϊόν</th><th class="num">Σήμερα</th><th class="num">Τουλάχιστον</th></tr>${S.menu.map(x => `<tr><td>${esc(x.name)}</td><td class="num">${eur2(x.price)}</td><td class="num ${fMin > 1 ? 'neg' : 'pos'}">${eur2(Math.ceil(x.price * fMin * 10) / 10)}</td></tr>`).join('')}</table>
+    <p class="small">${fMin > 1 ? `Οι τιμές πρέπει να ανέβουν τουλάχιστον ${num1((fMin - 1) * 100)}%.` : `Οι τιμές θα μπορούσαν να πέσουν έως ${num1((1 - fMin) * 100)}% πριν μπει μέσα το μαγαζί.`}</p>`);
+  setHTML('mn-barbers', R.staff.map(p => row(esc(p.name), `κοστίζει ${eur(p.cost)}/μήνα · ≈ ${num(p.cost / Math.max(0.01, (R.avgTicket / (1 + S.settings.vatCafe / 100)) * (1 - R.cogsPct)) / S.settings.daysPerMonth)} παραγγελίες/ημέρα για να βγει`)).join(''));
 }
 
 /* ---------- Barbers ---------- */
@@ -1411,8 +1726,8 @@ function fCoffee(R) {
 function rCapex() {
   const cats = [...new Set(S.capex.map(x => x.cat))];
   return `
-  <h2>Έξοδα για να ανοίξει το μαγαζί</h2>
-  <p class="lead">Εκτιμήσεις για Καλαμάτα, χωρίς ΦΠΑ όπου μπορεί να συμψηφιστεί. Ξετίκαρε ό,τι δεν χρειάζεται, άλλαξε ποσά με τις προσφορές που θα πάρετε.</p>
+  <h2>${isCafe(S) ? 'Αγορά επιχείρησης & έναρξη' : 'Έξοδα για να ανοίξει το μαγαζί'}</h2>
+  <p class="lead">${isCafe(S) ? 'Τιμή αγοράς της επιχείρησης (με τον εξοπλισμό) και ό,τι χρειάζεται για να ξεκινήσετε. Ζητήστε από τον πωλητή βιβλία τζίρου, μισθωτήριο, συμβάσεις προσωπικού και άδειες πριν κλείσετε τιμή.' : 'Εκτιμήσεις για Καλαμάτα, χωρίς ΦΠΑ όπου μπορεί να συμψηφιστεί. Ξετίκαρε ό,τι δεν χρειάζεται, άλλαξε ποσά με τις προσφορές που θα πάρετε.'}</p>
   <div class="kgrid" id="cx-kpis"></div>
   <div class="grid g2">
     ${cats.map((cat, ci) => `<div class="card">
@@ -1505,7 +1820,7 @@ function fFixed(R) {
 function rPartners() {
   return `
   <h2>Εταίροι</h2>
-  <p class="lead">Ποιος βάζει πόσα και πώς μοιράζονται τα κέρδη. Ο Πάνος φέρνει την πιστοποίηση κουρέα που χρειάζεται για τη λειτουργία· το μερίδιό του αντανακλά αυτή τη συνεισφορά.</p>
+  <p class="lead">${isCafe(S) ? 'Ποιος βάζει πόσα και πώς μοιράζονται τα κέρδη του καφέ.' : `Ποιος βάζει πόσα και πώς μοιράζονται τα κέρδη. Ο Πάνος φέρνει την πιστοποίηση κουρέα που χρειάζεται για τη λειτουργία· το μερίδιό του αντανακλά αυτή τη συνεισφορά.`}</p>
   <div id="pt-warn"></div>
   <div class="grid g3">
     ${S.partners.map((p, i) => `<div class="card">
@@ -1554,7 +1869,7 @@ function rSettings() {
   <div class="grid g2">
     <div class="card"><h3>Λειτουργία</h3><div class="fields">
       ${field('settings.daysPerMonth', 'Εργάσιμες ημέρες/μήνα', { step: 1, help: 'Ανά κουρέα' })}
-      ${field('settings.consumablePerCut', 'Αναλώσιμα/κούρεμα', { suf: '€', step: 0.1 })}
+      ${isCafe(S) ? '' : field('settings.consumablePerCut', 'Αναλώσιμα/κούρεμα', { suf: '€', step: 0.1 })}
       ${field('settings.rampStart', 'Πελατεία 1ου μήνα', { suf: '%', step: 5 })}
       ${field('settings.rampMonths', 'Μήνες ως πλήρη πελατεία', { step: 1 })}
       ${field('settings.horizon', 'Ορίζοντας γραφήματος', { suf: 'μήνες', step: 12 })}
@@ -1563,12 +1878,10 @@ function rSettings() {
       ${field('settings.costGrowth', 'Αύξηση παγίων', { suf: '%/έτος', step: 0.5 })}
     </div></div>
     <div class="card"><h3>Φόροι & εισφορές</h3><div class="fields">
-      ${field('settings.vatServices', 'ΦΠΑ κουρέματος', { suf: '%', step: 1 })}
-      ${field('settings.vatCoffee', 'ΦΠΑ καφέ', { suf: '%', step: 1 })}
-      ${field('settings.vatProducts', 'ΦΠΑ προϊόντων', { suf: '%', step: 1 })}
+      ${isCafe(S) ? field('settings.vatCafe', 'ΦΠΑ (καφές & σνακ)', { suf: '%', step: 1, help: 'Εστίαση: συνήθως 13%' }) : field('settings.vatServices', 'ΦΠΑ κουρέματος', { suf: '%', step: 1 }) + field('settings.vatCoffee', 'ΦΠΑ καφέ', { suf: '%', step: 1 }) + field('settings.vatProducts', 'ΦΠΑ προϊόντων', { suf: '%', step: 1 })}
       ${field('settings.employerRate', 'Εργοδοτικές εισφορές', { suf: '%', step: 0.01 })}
       ${field('settings.salaryMonths', 'Μισθοί/έτος', { step: 0.5, help: '14 = με δώρα & επίδομα άδειας' })}
-      ${field('settings.overtimePremium', 'Προσαύξηση υπερωρίας', { suf: '%', step: 5, help: '20% υπερεργασία (41–45 ώρες) · 40% υπερωρία' })}
+      ${isCafe(S) ? '' : field('settings.overtimePremium', 'Προσαύξηση υπερωρίας', { suf: '%', step: 5, help: '20% υπερεργασία (41–45 ώρες) · 40% υπερωρία' })}
       ${field('settings.corpTax', 'Φόρος εταιρείας', { suf: '%', step: 1 })}
       ${field('settings.dividendTax', 'Φόρος μερισμάτων', { suf: '%', step: 1 })}
       ${field('settings.cardShare', 'Πληρωμές με κάρτα', { suf: '%', step: 5 })}
@@ -1577,10 +1890,18 @@ function rSettings() {
     <div class="card"><h3>Σενάρια</h3>
       <p class="small" style="margin-top:-6px">Όλες οι αλλαγές και τα σενάρια αποθηκεύονται αυτόματα και είναι κοινά για όλους τους εταίρους (κρυπτογραφημένα με τον κωδικό). Η «Επαναφορά αρχικών» αλλάζει τα νούμερα για όλους.</p>
       <div class="btns"><input class="txt" id="scnName" placeholder="Όνομα σεναρίου" style="flex:1;min-width:140px;border-color:var(--line);margin:0"><button class="btn" data-act="saveScn">Αποθήκευση</button></div>
-      <div style="margin-top:8px">${Object.keys(sc).length ? Object.keys(sc).map(n => `<div class="scn"><span>${esc(n)}</span><span class="btns"><button class="btn sec2" data-act="loadScn" data-n="${esc(n)}">Φόρτωση</button><button class="x" data-act="delScn" data-n="${esc(n)}">×</button></span></div>`).join('') : '<p class="small">Κανένα αποθηκευμένο σενάριο.</p>'}</div>
+      <div style="margin-top:8px">${Object.keys(sc).filter(n => isCafe(sc[n]) === isCafe(S)).length ? Object.keys(sc).filter(n => isCafe(sc[n]) === isCafe(S)).map(n => `<div class="scn"><span>${esc(n)}</span><span class="btns"><button class="btn sec2" data-act="loadScn" data-n="${esc(n)}">Φόρτωση</button><button class="x" data-act="delScn" data-n="${esc(n)}">×</button></span></div>`).join('') : '<p class="small">Κανένα αποθηκευμένο σενάριο.</p>'}</div>
       <div class="btns" style="margin-top:12px"><button class="btn sec2" data-act="importCsvBtn">Εισαγωγή CSV</button><button class="btn sec2" data-act="exportCsv">Εξαγωγή CSV</button><button class="btn sec2" data-act="export">Εξαγωγή JSON</button><button class="btn sec2" data-act="import">Εισαγωγή JSON</button><button class="btn sec2" data-act="print">Εκτύπωση</button><button class="btn sec2" data-act="reset" style="color:var(--neg)">Επαναφορά αρχικών</button></div>
     </div>
-    <div class="card"><h3>Σημειώσεις & ρίσκα</h3>
+${isCafe(S) ? `    <div class="card"><h3>Σημειώσεις & ρίσκα</h3>
+      <div class="small" style="display:flex;flex-direction:column;gap:8px">
+        <span><b>Αγορά υπάρχουσας επιχείρησης:</b> ζητήστε Ε3/βιβλία τζίρου 2–3 ετών, αποδείξεις ταμειακής, κατάσταση χρεών (ΕΦΚΑ, ΑΑΔΕ, προμηθευτές) και βεβαίωση ότι δεν μεταφέρονται σε εσάς.</span>
+        <span><b>Μισθωτήριο:</b> πόσα χρόνια μένουν, ποιο είναι το ενοίκιο και αν ο ιδιοκτήτης δέχεται τη μεταβίβαση. Χωρίς μακροχρόνιο μισθωτήριο ο «αέρας» δεν αξίζει.</span>
+        <span><b>Προσωπικό:</b> αν παίρνετε και τους υπαλλήλους, μεταφέρονται οι συμβάσεις, η προϋπηρεσία και τυχόν οφειλές τους.</span>
+        <span><b>Άδειες:</b> γνωστοποίηση ΚΥΕ και άδεια τραπεζοκαθισμάτων πρέπει να μεταβιβαστούν ή να εκδοθούν στο όνομά σας.</span>
+        <span><b>Τιμή αγοράς:</b> συνήθως 1–2 χρόνια καθαρού κέρδους του πωλητή. Ελέγξτε την απόσβεση στην «Επισκόπηση» με ρεαλιστικές παραγγελίες.</span>
+      </div>
+    </div>` : `    <div class="card"><h3>Σημειώσεις & ρίσκα</h3>
       <div class="small" style="display:flex;flex-direction:column;gap:8px">
         <span><b>Κατώτατος μισθός:</b> 920 € μικτά από 1/4/2026· στόχος κυβέρνησης ~1.000 € ως το 2028. Οι μισθοί θα ανεβαίνουν.</span>
         <span><b>Ενοικίαση θέσης:</b> ο κουρέας πρέπει να έχει δική του δραστηριότητα (μπλοκάκι) και γραπτή σύμβαση. Αν δουλεύει με ωράριο και οδηγίες του μαγαζιού, ο ΕΦΚΑ/η Επιθεώρηση Εργασίας μπορεί να το θεωρήσει εξαρτημένη εργασία — συζητήστε το με λογιστή/δικηγόρο.</span>
@@ -1589,7 +1910,7 @@ function rSettings() {
         <span><b>ΦΠΑ:</b> οι τιμές του τιμοκαταλόγου περιλαμβάνουν ΦΠΑ 24%· το μαγαζί κρατά το 80,6%.</span>
         <span><b>Εισφορές διαχειριστή:</b> αν κάποιος εταίρος είναι διαχειριστής ΙΚΕ ή ομόρρυθμος εταίρος ΟΕ, πληρώνει δικές του εισφορές ΕΦΚΑ (~250 €/μήνα). Πρόσθεσέ το στα μηνιαία αν ισχύει.</span>
       </div>
-    </div>
+    </div>`}
   </div>`;
 }
 
@@ -1611,6 +1932,8 @@ const MODE_ALIASES = { salary: 'salary', 'μισθωτός': 'salary', 'μισθ
 const COFFEE_ALIASES = { free: 'free', 'κερασμένος': 'free', paid: 'paid', 'πωλείται': 'paid', both: 'both', mixed: 'both', 'και τα δύο': 'both', 'μικτό': 'both', none: 'none', 'χωρίς': 'none' };
 const FIELD_MAP = {
   barber: { otunit: 'otUnit', othoursday: 'otHoursDay', othoursperday: 'otHoursDay', otdays: 'otDays', othours: 'otHours', overtime: 'otHours', otcutsperhour: 'otCutsPerHour', otrate: 'otRate', turnpct: 'turnPct', turnoverpct: 'turnPct', turnbase: 'turnBase', mode: 'mode', cutsperday: 'cutsPerDay', cuts: 'cutsPerDay', salary: 'salary', bonuspct: 'bonusPct', bonus: 'bonusPct', rent: 'rent', barberpct: 'barberPct', commissionpct: 'barberPct', commission: 'barberPct', ticket: 'ticket' },
+  menu: { price: 'price', mix: 'mix', mixpct: 'mix', costpct: 'costPct', cost: 'costPct' },
+  staff: { salary: 'salary', fte: 'fte' },
   partner: { cappct: 'capPct', capital: 'capPct', share: 'share', profitpct: 'share', sharepct: 'share', role: 'role' },
   service: { price: 'price', mix: 'mix', mixpct: 'mix' },
   capex: { amount: 'amount', on: 'on', enabled: 'on', qty: 'qty', quantity: 'qty', unit: 'unit', unitprice: 'unit', price: 'unit' },
@@ -1674,9 +1997,10 @@ function csvToState(rows, base) {
       else if (key === 'amount') { const v = csvNum(r.value); if (v == null) warn.push(`Γραμμή ${line}: μη έγκυρο ποσό «${r.value}»`); else it.amount = v; }
       else warn.push(`Γραμμή ${line}: άγνωστο πεδίο «${r.field}»`);
       if (r.note) it.note = r.note;
-    } else if (sec === 'service' || sec === 'barber' || sec === 'partner') {
+    } else if (sec === 'service' || sec === 'barber' || sec === 'partner' || sec === 'menu' || sec === 'staff') {
       if (!r.name) { warn.push(`Γραμμή ${line}: λείπει όνομα`); return; }
-      const make = { service: () => ({ name: r.name, price: 0, mix: 0 }), barber: () => Object.assign(blankBarber(1), { name: r.name }), partner: () => ({ name: r.name, capPct: 0, share: 0, role: '' }) }[sec];
+      const make = { service: () => ({ name: r.name, price: 0, mix: 0 }), barber: () => Object.assign(blankBarber(1), { name: r.name }), partner: () => ({ name: r.name, capPct: 0, share: 0, role: '' }),
+        menu: () => ({ name: r.name, price: 0, mix: 0, costPct: 30 }), staff: () => ({ name: r.name, salary: 920, fte: 100 }) }[sec];
       const it = getItem(sec, r.name, make);
       const key = FIELD_MAP[sec][f];
       if (!key) { warn.push(`Γραμμή ${line}: άγνωστο πεδίο «${r.field}» για ${sec}`); return; }
@@ -1684,8 +2008,9 @@ function csvToState(rows, base) {
       if (key === 'mode') { const m = MODE_ALIASES[String(r.value).toLowerCase().trim()]; if (m) it.mode = m; else warn.push(`Γραμμή ${line}: άγνωστο μοντέλο «${r.value}»`); }
       else if (key === 'role') it.role = r.value;
       else { const v = csvNum(r.value); if (v == null) warn.push(`Γραμμή ${line}: μη έγκυρος αριθμός «${r.value}»`); else it[key] = v; }
-    } else if (sec === 'setting' || sec === 'barista' || sec === 'retail') {
-      const target = sec === 'setting' ? next.settings : next[sec];
+    } else if (sec === 'setting' || sec === 'barista' || sec === 'retail' || sec === 'sale') {
+      const target = sec === 'setting' ? next.settings : sec === 'sale' ? next.sales : next[sec];
+      if (!target) { warn.push(`Γραμμή ${line}: η ενότητα «${r.section}» δεν ισχύει για αυτή την επιχείρηση`); return; }
       const key = pickKey(target, r.field);
       if (!key) { warn.push(`Γραμμή ${line}: άγνωστη ρύθμιση «${r.field}»`); return; }
       if (key === 'enabled') target[key] = csvBool(r.value);
@@ -1694,7 +2019,7 @@ function csvToState(rows, base) {
       counts[sec] = (counts[sec] || 0) + 1;
     } else warn.push(`Γραμμή ${line}: άγνωστη ενότητα «${r.section}»`);
   });
-  const target = { capex: 'capex', fixed: 'fixed', service: 'services', barber: 'barbers', partner: 'partners' };
+  const target = { capex: 'capex', fixed: 'fixed', service: 'services', barber: 'barbers', partner: 'partners', menu: 'menu', staff: 'staff' };
   Object.keys(lists).forEach(sec => { next[target[sec]] = order[sec].map(k => lists[sec].get(k)); counts[sec] = order[sec].length; });
   return { next, warn, counts };
 }
@@ -1704,11 +2029,17 @@ function stateToCsv(st) {
   const add = (...r) => out.push(r);
   st.capex.forEach(x => { add('capex', x.cat, x.name, 'qty', x.qty ?? 1, ''); add('capex', x.cat, x.name, 'unit', x.unit ?? x.amount, x.note || ''); if (!x.on) add('capex', x.cat, x.name, 'on', 0, ''); });
   st.fixed.forEach(x => add('fixed', '', x.name, 'amount', x.amount, x.note || ''));
-  st.services.forEach(x => { add('service', '', x.name, 'price', x.price, ''); add('service', '', x.name, 'mix', x.mix, ''); });
-  st.barbers.forEach(b => ['mode', 'cutsPerDay', 'salary', 'bonusPct', 'rent', 'barberPct', 'ticket'].forEach(k => add('barber', '', b.name, k, b[k], '')));
+  if (isCafe(st)) {
+    st.menu.forEach(x => ['price', 'mix', 'costPct'].forEach(k => add('menu', '', x.name, k, x[k], '')));
+    st.staff.forEach(x => ['salary', 'fte'].forEach(k => add('staff', '', x.name, k, x[k], '')));
+    Object.entries(st.sales).forEach(([k, v]) => add('sales', '', '', k, v, ''));
+  } else {
+    st.services.forEach(x => { add('service', '', x.name, 'price', x.price, ''); add('service', '', x.name, 'mix', x.mix, ''); });
+    st.barbers.forEach(b => ['mode', 'cutsPerDay', 'salary', 'bonusPct', 'rent', 'barberPct', 'ticket'].forEach(k => add('barber', '', b.name, k, b[k], '')));
+    Object.entries(st.barista).forEach(([k, v]) => add('barista', '', '', k, typeof v === 'boolean' ? (v ? 1 : 0) : v, ''));
+    Object.entries(st.retail).forEach(([k, v]) => add('retail', '', '', k, v, ''));
+  }
   st.partners.forEach(p => ['capPct', 'share', 'role'].forEach(k => add('partner', '', p.name, k, p[k], '')));
-  Object.entries(st.barista).forEach(([k, v]) => add('barista', '', '', k, typeof v === 'boolean' ? (v ? 1 : 0) : v, ''));
-  Object.entries(st.retail).forEach(([k, v]) => add('retail', '', '', k, v, ''));
   Object.entries(st.settings).forEach(([k, v]) => add('setting', '', '', k, v, ''));
   return out.map(r => r.map(c => { const t = String(c ?? ''); return /[",\n;]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; }).join(',')).join('\n');
 }
@@ -1776,7 +2107,11 @@ async function decryptObj(s) {
   const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64d(p.i) }, sync.key, b64d(p.c));
   return JSON.parse(new TextDecoder().decode(pt));
 }
-const snapshot = () => ({ state: clone(baseState()), target: targetState() ? clone(targetState()) : null, scenarios: scenarios() });
+const snapshot = () => {
+  const ct = curOf('coffee', 'target');
+  return { state: clone(curOf('barber', 'base')), target: curOf('barber', 'target') ? clone(curOf('barber', 'target')) : null,
+    coffee: { state: clone(curOf('coffee', 'base')), target: ct ? clone(ct) : null }, scenarios: scenarios() };
+};
 
 async function syncInit() {
   if (!AUTH || !AUTH.token || !/^[0-9a-f]{64}$/.test(DATA_KEY) || !window.crypto || !crypto.subtle) { setSync('local'); return; }
@@ -1844,10 +2179,10 @@ async function push() {
 }
 
 /* ---------- human-readable diff for the history ---------- */
-const SEC_LABEL = { barbers: 'Κουρέας', services: 'Υπηρεσία', capex: 'Έξοδο έναρξης', fixed: 'Πάγιο', partners: 'Εταίρος', settings: 'Παραδοχές', barista: 'Μπαρίστα/καφές', retail: 'Λιανική', finance: 'Χρηματοδότηση' };
+const SEC_LABEL = { menu: 'Προϊόν', staff: 'Υπάλληλος', sales: 'Πωλήσεις', barbers: 'Κουρέας', services: 'Υπηρεσία', capex: 'Έξοδο έναρξης', fixed: 'Πάγιο', partners: 'Εταίρος', settings: 'Παραδοχές', barista: 'Μπαρίστα/καφές', retail: 'Λιανική', finance: 'Χρηματοδότηση' };
 const F_LABEL = {
   cutsPerDay: 'κουρέματα/ημέρα', salary: 'μισθός', bonusPct: 'bonus %', rent: 'ενοίκιο θέσης', barberPct: 'ποσοστό κουρέα', turnPct: '% επί τζίρου', otHours: 'ώρες υπερωρίας/μήνα', otUnit: 'υπερωρίες μετρούνται', otHoursDay: 'ώρες υπερωρίας/ημέρα', otDays: 'ημέρες με υπερωρία', otCutsPerHour: 'κουρέματα/ώρα υπερωρίας', otRate: 'κόστος ώρας υπερωρίας', overtimePremium: 'προσαύξηση υπερωρίας', turnBase: 'τζίρος από', ticket: 'μέση τιμή', mode: 'μοντέλο',
-  name: 'όνομα', amount: 'ποσό', qty: 'τεμάχια', unit: 'τιμή τεμαχίου', on: 'ενεργό', price: 'τιμή', mix: '% πελατών', capPct: '% κεφαλαίου', share: '% κερδών', role: 'ρόλος', note: 'σημείωση', cat: 'κατηγορία',
+  costPct: 'κόστος υλικών %', fte: 'απασχόληση %', ordersPerDay: 'παραγγελίες/ημέρα', itemsPerOrder: 'τεμάχια/παραγγελία', openHours: 'ώρες λειτουργίας/ημέρα', vatCafe: 'ΦΠΑ καφέ', name: 'όνομα', amount: 'ποσό', qty: 'τεμάχια', unit: 'τιμή τεμαχίου', on: 'ενεργό', price: 'τιμή', mix: '% πελατών', capPct: '% κεφαλαίου', share: '% κερδών', role: 'ρόλος', note: 'σημείωση', cat: 'κατηγορία',
   enabled: 'μπαρίστα', fte: 'απασχόληση %', coffeeMode: 'καφές', cupsPerDay: 'καφέδες/ημέρα', takeRate: '% που παίρνουν καφέ', freeAll: 'δωρεάν καφές σε όλους τους πελάτες', costPerCup: 'κόστος/καφέ', sales: 'πωλήσεις', margin: 'περιθώριο %',
   loan: 'δάνειο', rate: 'επιτόκιο', years: 'διάρκεια (έτη)', grant: 'επιδότηση', grantMonth: 'μήνας επιδότησης', grantOn: 'επιδότηση ενεργή', grantNonRepay: 'επιδότηση μη επιστρεπτέα', grantRepayYears: 'επιστροφή επιδότησης (έτη)', grantGrace: 'χάριτος επιδότησης (μήνες)',
   daysPerMonth: 'ημέρες/μήνα', vatServices: 'ΦΠΑ κουρέματος', vatCoffee: 'ΦΠΑ καφέ', vatProducts: 'ΦΠΑ προϊόντων', employerRate: 'εργοδοτικές εισφορές', salaryMonths: 'μισθοί/έτος',
@@ -1863,12 +2198,21 @@ function fmtV(k, v) {
   if (typeof v === 'number') return num1(v);
   return `«${v ?? ''}»`;
 }
+function diffPair(aS, aT, bS, bT, pre) {
+  const out = (aS ? diffOne(aS, bS) : ['Δημιουργήθηκε']).map(x => pre + x);
+  if (bT) {
+    if (!aT) out.push(pre + 'Δημιουργήθηκε ο «Στόχος»', ...diffOne(bS, bT).map(x => pre + 'Στόχος · ' + x));
+    else out.push(...diffOne(aT, bT).filter(x => !/κλείδωσε/i.test(x)).map(x => pre + 'Στόχος · ' + x));
+  } else if (aT) out.push(pre + 'Διαγράφηκε ο «Στόχος»');
+  return out;
+}
 function diffStates(a, b) {
-  const out = diffOne(a.state, b.state);
-  if (b.target) {
-    if (!a.target) out.push('Δημιουργήθηκε ο «Στόχος»', ...diffOne(b.state, b.target).map(x => 'Στόχος · ' + x));
-    else out.push(...diffOne(a.target, b.target).filter(x => !/κλείδωσε/i.test(x)).map(x => 'Στόχος · ' + x));
-  } else if (a.target) out.push('Διαγράφηκε ο «Στόχος»');
+  const out = diffPair(a.state, a.target, b.state, b.target, '');
+  if (b.coffee && b.coffee.state) {
+    const ac = a.coffee || {};
+    if (!ac.state) out.push('Coffeeshop · ξεκίνησε');
+    else out.push(...diffPair(ac.state, ac.target, b.coffee.state, b.coffee.target, 'Coffeeshop · '));
+  }
   const sa = Object.keys(a.scenarios || {}), sb = Object.keys(b.scenarios || {});
   sb.filter(n => !sa.includes(n)).forEach(n => out.push(`+ Σενάριο «${n}»`));
   sa.filter(n => !sb.includes(n)).forEach(n => out.push(`− Σενάριο «${n}»`));
@@ -1876,7 +2220,7 @@ function diffStates(a, b) {
 }
 function diffOne(A, B) {
   const out = [];
-  ['barbers', 'services', 'capex', 'fixed', 'partners'].forEach(sec => {
+  ['barbers', 'services', 'capex', 'fixed', 'partners', 'menu', 'staff'].forEach(sec => {
     const xa = A[sec] || [], xb = B[sec] || [], L = SEC_LABEL[sec];
     const fieldDiff = (p, q) => Object.keys(Object.assign({}, p, q)).forEach(k => {
       if (k !== 'name' && JSON.stringify(p[k]) !== JSON.stringify(q[k])) out.push(`${L} «${q.name}»: ${F_LABEL[k] || k} ${fmtV(k, p[k])} → ${fmtV(k, q[k])}`);
@@ -1889,7 +2233,7 @@ function diffOne(A, B) {
       xa.forEach(p => { if (!kb.has(p.name)) out.push(`− ${L}: «${p.name}»`); });
     }
   });
-  ['settings', 'barista', 'retail', 'finance'].forEach(sec => {
+  ['settings', 'barista', 'retail', 'finance', 'sales'].forEach(sec => {
     const p = A[sec] || {}, q = B[sec] || {};
     Object.keys(q).forEach(k => { if (JSON.stringify(p[k]) !== JSON.stringify(q[k])) out.push(`${SEC_LABEL[sec]}: ${F_LABEL[k] || k} ${fmtV(k, p[k])} → ${fmtV(k, q[k])}`); });
   });
@@ -1999,6 +2343,9 @@ function renderView() {
   if (!TABS[TAB]) TAB = 'overview';
   renderTabs();
   setTimeout(() => { if (TAB === 'history') loadHistory(); }, 0);
+  document.body.classList.toggle('cafe', BIZ === 'coffee');
+  $('bizName').innerHTML = BIZ === 'coffee' ? 'Coffee<span class="lg-only">shop</span>' : 'Barber';
+  document.title = BIZ === 'coffee' ? 'Coffeeshop · Ν. Ηράκλειο' : 'Barber · Καλαμάτα';
   document.body.classList.toggle('target', VIEW === 'target');
   document.body.classList.toggle('play', VIEW === 'play');
   const back = `<span class="lbl">← Τωρινά</span><span class="ico">←</span>`;
@@ -2031,18 +2378,14 @@ function refresh() {
   CHARTS.clear(); chartSeq = 0; hideTip();
   const R = compute(S), C = capexTotals(S, R), CF = cashflow(S, C);
   const c = R.cost;
-  const costTip = tipHTML('Κόστος ανά μήνα', [
-    ['', 'Κουρείς (μισθοί/ποσοστά)', eur(c.staff)], ...(c.partner ? [['', 'Εταίροι (% τζίρου)', eur(c.partner)]] : []),
-    ['', 'Μπαρίστα', eur(c.barista)], ['', 'Πάγια', eur(c.fixed)], ['', 'Αναλώσιμα', eur(c.consum)],
-    ['', 'Καφές & προϊόντα', eur(c.coffee + c.retail)], ['', 'Προμήθειες καρτών', eur(c.card)], ['', 'Φόρος', eur(R.tax)]
-  ]);
+  const costTip = tipHTML('Κόστος ανά μήνα', [...costParts(R).map(([l, v]) => ['', l, eur(v)]), ['', 'Φόρος', eur(R.tax)]]);
   $('strip').innerHTML = [
     ['Καθαρό/μήνα', `<span class="${sgn(R.net)}">${eur(R.net)}</span>`],
     ['Κόστος/μήνα', eur(R.costs), costTip],
     ['Έσοδα/μήνα', eur(R.revenue)],
     ['Κεφάλαιο', eur(C.net), capTip(C)],
     ['Απόσβεση', CF.payback ? `${CF.payback} μήνες` : '—'],
-    ['Πελάτες/μήνα', num(R.clients)]
+    [isCafe(S) ? 'Παραγγελίες/μήνα' : 'Πελάτες/μήνα', num(R.clients)]
   ].map(([l, v, t]) => `<div class="st"${t ? ` data-tip="${attr(t)}"` : ''}><span>${l}</span><b>${v}</b></div>`).join('');
   document.querySelectorAll('[data-show]').forEach(e => { e.textContent = getPath(S, e.dataset.show); });
   TABS[TAB].fill(R);
@@ -2115,6 +2458,12 @@ const ACTIONS = {
   tab: d => { TAB = d.tab; ls.set(LS_TAB, TAB); renderView(); window.scrollTo({ top: 0 }); },
   addBarber: () => { S.barbers.push(blankBarber(S.barbers.length + 1)); },
   delBarber: d => { if (confirm(`Αφαίρεση «${S.barbers[d.i].name}»;`)) S.barbers.splice(+d.i, 1); },
+  addMenu: () => { S.menu.push({ name: 'Νέο προϊόν', price: 2.5, mix: 0, costPct: 30 }); },
+  delMenu: d => { S.menu.splice(+d.i, 1); },
+  addStaff: () => { S.staff.push({ name: `Υπάλληλος ${S.staff.length + 1}`, salary: 920, fte: 100 }); },
+  delStaff: d => { if (confirm(`Αφαίρεση «${S.staff[d.i].name}»;`)) S.staff.splice(+d.i, 1); },
+  bizMenu: () => { const m = $('bizMenu'); m.classList.toggle('on'); m.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.b === BIZ)); return false; },
+  setBiz: d => { $('bizMenu').classList.remove('on'); if (d.b !== BIZ) { setBiz(d.b); renderView(); window.scrollTo({ top: 0 }); toast(d.b === 'coffee' ? 'Coffeeshop' : 'Barber'); } return false; },
   addService: () => { S.services.push({ name: 'Νέα υπηρεσία', price: 10, mix: 0 }); },
   delService: d => { S.services.splice(+d.i, 1); },
   addCapex: d => { S.capex.push({ cat: d.cat, name: 'Νέο έξοδο', qty: 1, unit: 0, amount: 0, on: true, note: '' }); },
@@ -2127,7 +2476,7 @@ const ACTIONS = {
     const n = ($('scnName').value || '').trim() || new Date().toLocaleString('el-GR');
     const sc = scenarios(); sc[n] = clone(S); ls.set(LS_SCN, JSON.stringify(sc)); toast(`Αποθηκεύτηκε: ${n}`);
   },
-  loadScn: d => { const sc = scenarios(); if (sc[d.n]) { S = hydrate(sc[d.n]); toast(`Φορτώθηκε: ${d.n}`); } },
+  loadScn: d => { const sc = scenarios(); if (sc[d.n]) { if (isCafe(sc[d.n]) !== isCafe(S)) { toast('Το σενάριο είναι για την άλλη επιχείρηση'); return false; } S = hydrate(sc[d.n]); toast(`Φορτώθηκε: ${d.n}`); } },
   delScn: d => { const sc = scenarios(); delete sc[d.n]; ls.set(LS_SCN, JSON.stringify(sc)); },
   export: () => {
     const blob = new Blob([JSON.stringify({ app: 'barber', exported: new Date().toISOString(), state: S, scenarios: scenarios() }, null, 2)], { type: 'application/json' });
@@ -2142,7 +2491,7 @@ const ACTIONS = {
     return false;
   },
   print: () => { TAB = 'overview'; renderView(); setTimeout(() => window.print(), 100); return false; },
-  reset: () => { if (confirm('Επαναφορά όλων των νούμερων στις αρχικές εκτιμήσεις; Τα αποθηκευμένα σενάρια μένουν.')) S = clone(DEFAULTS); else return false; },
+  reset: () => { if (confirm('Επαναφορά όλων των νούμερων στις αρχικές εκτιμήσεις; Τα αποθηκευμένα σενάρια μένουν.')) S = isCafe(S) ? hydrate(clone(DEFAULTS_COFFEE)) : hydrate(clone(DEFAULTS)); else return false; },
   theme: () => {
     const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     const nx = cur === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = nx; ls.set(LS_THEME, nx); return false;
@@ -2151,6 +2500,7 @@ const ACTIONS = {
   refresh: () => { doRefresh(); return false; }
 };
 document.addEventListener('click', e => {
+  if (!e.target.closest('#bizMenu, #bizBtn')) { const m = $('bizMenu'); if (m) m.classList.remove('on'); }
   const el = e.target.closest('[data-act]');
   if (!el) return;
   const fn = ACTIONS[el.dataset.act];
